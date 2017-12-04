@@ -1,10 +1,9 @@
 # Pjax
 
-[![Build Status](http://img.shields.io/travis/MoOx/pjax.svg)](https://travis-ci.org/MoOx/pjax) [@todo fix CI](https://github.com/MoOx/pjax/issues/63).
 
 > Easily enable fast Ajax navigation on any website (using pushState +  xhr)
 
-Pjax is ~~a jQuery plugin~~ **a standalone JavaScript module** that uses
+Pjax is a standalone JavaScript module that uses
 ajax (XmlHttpRequest) and
 [pushState()](https://developer.mozilla.org/en-US/docs/Web/Guide/API/DOM/Manipulating_the_browser_history)
 to deliver a fast browsing experience.
@@ -15,16 +14,16 @@ Especially for user that have low bandwidth connection._
 
 **No more full page reload. No more lots of HTTP request.**
 
----
+This is a heavily modded version for usage in combination with the [LimeSurvey Survey application] (https://limesurvey.org).
+The original which is still profiting from this version is the original at [MoOx](https://github.com/MoOx/pjax)
 
-<a target='_blank' rel='nofollow' href='https://app.codesponsor.io/link/6RNUx3a3Vj2k5iApeppsc9L9/MoOx/pjax'>  <img alt='Sponsor' width='888' height='68' src='https://app.codesponsor.io/embed/6RNUx3a3Vj2k5iApeppsc9L9/MoOx/pjax.svg' /></a>
-
----
-
+This version has somehow strayed from the original version.
+Some changes are not compatible, and may break older pages using pjax. 
 
 ## Demo
 
-[You can see this running on my website](http://moox.io), with sexy CSS animations when switching pages.
+Pjax is in heavy use in the adminpanel of the developement branch of Limesurvey currently.
+A demo of this developement branch is currently running at https://devdemo.limsurvey.org
 
 ## How Pjax works
 
@@ -51,6 +50,8 @@ want (including html metas, title, navigation state).
 - It check if all defined parts can be replaced:
     - if page doesn't suit requirement, classic navigation used,
     - if page suits requirement, Pjax does all defined DOM replacements
+- This version of Pjax will also check if the css differs from the former pages head and update it accordingly
+- Also will this version of pjax reload scripts that are loaded remotely and trigger an event when they are laoded completely
 - Then, it updates the browser's current url using pushState
 
 ## Overview
@@ -83,7 +84,7 @@ Consider the following page.
 We want Pjax to grab the url `/blah` then replace `.my-Content` with whatever it gets back.
 Oh and the `<nav>` (that contains a status marker somewhere) can be updated too (or stay the same, as you wish).
 And also the `<aside>` please.
-So we want to update `[".my-Header", ".my-Content", ".my-Sidebar"]`, **without reloading styles nor scripts**.
+So we want to update `[".my-Header", ".my-Content", ".my-Sidebar"]`, **without reloading styles nor scripts that are not inside the elements**.
 
 We do this by telling Pjax to listen on `a` tags and use CSS selectors defined above (without forgetting minimal meta):
 
@@ -106,23 +107,13 @@ _Magic! For real!_ **There is completely no need to do anything on server side!*
 
 ## Installation
 
-You can install pjax from **npm**
-
-```shell
-$ npm install pjax
-```
-
-Or using **bower**
-
-```shell
-$ bower install pjax
-```
-
+Currently this version needs to be downloaded seperately
 Pjax can obviously be downloaded directly.
 
 ## No dependencies
 
 _There is nothing you need. No jQuery or something._
+
 
 ## Compatibility
 
@@ -130,6 +121,9 @@ Pjax only works with [browsers that support the `history.pushState` API](http://
 When the API isn't supported Pjax goes into fallback mode (it just does nothing).
 
 To see if Pjax is actually supported by your browser, use `Pjax.isSupported()`.
+
+This version uses Promises, so you either have to use a non IE browser, or depend on a small shim.
+Productive use currently is with this one: https://github.com/stefanpenner/es6-promise
 
 ## Usage
 
@@ -172,6 +166,8 @@ When instanciating a `Pjax` object, you need to pass all options as an object:
 ##### `elements` (String, default "a[href], form[action]")
 
 CSS Selector to use to retrieve links to apply Pjax
+
+This version also works on forms, so a form put into this list, will be submitted through pjax.
 
 ##### `selectors` (Array, default ["title", ".js-Pjax"])
 
@@ -415,6 +411,10 @@ All events are fired from the _document_, not the link was clicked.
 * `pjax:complete` - Fired after the Pjax request finishes.
 * `pjax:success` - Fired after the Pjax request succeeds.
 * `pjax:error` - Fired after the Pjax request fails. Returning false will prevent the the fallback redirect.
+* `pjax:scriptcomplete` - Fired after the Pjax request finishes loading remote scripts.
+* `pjax:scriptsuccess` - Fired after the Pjax request succeeds loading remote scripts.
+* `pjax:scripterror` - Fired after the Pjax loading of remote scripts fails. Returning false will prevent the the fallback redirect.
+* `pjax:scripttimeout` - Fired after the Pjax loading of remote scripts takes too long. This happens a.e. when a script is already loaded and can't be grabbed from cache.
 
 `send` and `complete` are a good pair of events to use if you are implementing a loading indicator (eg: [topbar](http://buunguyen.github.io/topbar/))
 
@@ -439,14 +439,25 @@ new Pjax()
 
 document.addEventListener("pjax:success", whenDOMReady)
 ```
+This version has a two steps loading process.
+So if you are loading a function from a remote script, you should not wait until you can be sure it is loaded and available.
+So in the case of waiting for the script you should use:
+
+```js
+function whenDOMReady() {
+  // do you stuff
+}
+
+whenDOMReady()
+
+new Pjax()
+
+document.addEventListener("pjax:scriptcomplete", whenDOMReady)
+```
+Better to use scriptcomplete, since caching issues can lead to the script being completely loaded, but the load event not being fired.
 
 _Note: Don't create the Pjax in the `whenDOMReady` function._
 
-For my concern & usage, I `js-Pjax`ify all body children, including stuff like navigation & footer (to get navigation state easily updated).
-So attached behavior are rexecuted each time a page is loaded, like in the snippet above.
-
-If you want to just update a specific part (it's totally a good idea), you can just
-add the DOM related code in a function & rexecute this function when "pjax:success" event is done.
 
 ```js
 // do your global stuff
@@ -464,82 +475,15 @@ document.addEventListener("pjax:success", whenContainerReady)
 
 ---
 
-## FAQ
-
-### Q: Disqus doesn't work anymore, how can I fix that ?
-
-A: There is a few things you need to do:
-- wrap your disqus snippet into a dom element that you will add to the `selector`
-arra (or just wrap it with class="js-Pjax") & be sure to have a least the empty
-wrapper on each page (to avoid differences of DOM between pages)
-- edit your disqus snippet like the one below
-
-#### Disqus snippet before pjax integration
-
-```html
-<script>
-  var disqus_shortname = 'YOURSHORTNAME'
-  var disqus_identifier = 'PAGEID'
-  var disqus_url = 'PAGEURL'
-  var disqus_script = 'embed.js'
-  (function(d,s) {
-  s = d.createElement('script');s.async=1;s.src = '//' + disqus_shortname + '.disqus.com/'+disqus_script;
-  (d.getElementsByTagName('head')[0]).appendChild(s);
-  })(document)
-</script>
-```
-
-#### Disqus snippet after Pjax integration
-
-```html
-<div class="js-Pjax"><!-- need to be here on every pjaxified page, even if empty -->
-<!-- if (blah blah) { // eventual server side test to know wheter or not you include this script -->
-  <script>
-    var disqus_shortname = 'YOURSHORTNAME'
-    var disqus_identifier = 'PAGEID'
-    var disqus_url = 'PAGEURL'
-    var disqus_script = 'embed.js'
-
-    // here we will only load the disqus <script> if not already loaded
-    if (!window.DISQUS) {
-      (function(d,s) {
-      s = d.createElement('script');s.async=1;s.src = '//' + disqus_shortname + '.disqus.com/'+disqus_script;
-      (d.getElementsByTagName('head')[0]).appendChild(s);
-      })(document)
-    }
-    // if disqus <script> already loaded, we just reset disqus the right way
-    // see http://help.disqus.com/customer/portal/articles/472107-using-disqus-on-ajax-sites
-    else {
-      DISQUS.reset({
-        reload: true,
-        config: function () {
-          this.page.identifier = disqus_identifier
-          this.page.url = disqus_url
-        }
-      })
-    }
-  </script>
-<!-- } -->
-</div>
-```
-
-**Note: The thing you need to understand is that Pjax handle inline `<script>` only for container you are reloading.**
-
----
-
-## Examples
-
-Clone this repository and run `npm run example`, then open `http://localhost:3000/example` in your browser.
-
----
-
 ## CONTRIBUTING
 
-* ⇄ Pull requests and ★ Stars are always welcome.
-* For bugs and feature requests, please create an issue.
-* Pull requests must be accompanied by passing automated tests (`$ npm test`).
+For contributing, that does not involve any of the special methods mentioned here, please contribute to the original: https://github.com/MoOx/pjax
 
-## [CHANGELOG](CHANGELOG.md)
+Else pull request are welcome, but may take time to be processed
 
 ## [LICENSE](LICENSE)
+Project sourcecode Copyright (c) 2014 Maxime Thirouin
 
+The fork happened on th 4th of November 2017
+Differing sourcecode from the original is licensed under the GPLv3.
+with Copyright (c) 2017 Markus Flür/LimeSurvey GmbH
