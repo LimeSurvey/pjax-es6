@@ -1,8 +1,6 @@
 var clone = require('./lib/clone.js')
 var executeScripts = require('./lib/execute-scripts.js')
-
 var forEachEls = require("./lib/foreach-els.js")
-
 var newUid = require("./lib/uniqueid.js")
 
 var on = require("./lib/events/on.js")
@@ -39,7 +37,9 @@ var Pjax = function(options) {
         // @todo implement history cache here, based on uid
         this.loadUrl(st.state.url, opt)
       }
-    }.bind(this))
+    }.bind(this));
+
+    return this;
   }
 
 Pjax.prototype = {
@@ -49,6 +49,8 @@ Pjax.prototype = {
 
   parseDOM: require("./lib/proto/parse-dom.js"),
 
+  parseDOMtoUnload: require("./lib/proto/parse-dom-unload.js"),
+
   refresh: require("./lib/proto/refresh.js"),
 
   reload: require("./lib/reload.js"),
@@ -56,6 +58,12 @@ Pjax.prototype = {
   attachLink: require("./lib/proto/attach-link.js"),
 
   attachForm: require("./lib/proto/attach-form.js"),
+
+  unattachLink: require("./lib/proto/unattach-link.js"),
+
+  unattachForm: require("./lib/proto/unattach-form.js"),
+
+  updateStylesheets: require("./lib/update-stylesheets.js"),
 
   forEachSelectors: function(cb, context, DOMcontext) {
     return require("./lib/foreach-selectors.js").bind(this)(this.options.selectors, cb, context, DOMcontext)
@@ -84,6 +92,9 @@ Pjax.prototype = {
 
   loadContent: function(html, options) {
     var tmpEl = document.implementation.createHTMLDocument("pjax")
+    var collectForScriptcomplete = [
+      (Promise.resolve("basic resolve"))
+    ];
 
     // parse HTML attributes to copy them
     // since we are forced to use documentElement.innerHTML (outerHTML can't be used for <html>)
@@ -117,8 +128,12 @@ Pjax.prototype = {
       } catch (e) { }
     }
 
-    // try {
     this.switchSelectors(this.options.selectors, tmpEl, document, options)
+
+    //reset stylesheets if activated
+    if(this.options.reRenderCSS === true){
+      this.updateStylesheets.call(this, tmpEl.querySelectorAll('link[rel=stylesheet]'), document.querySelectorAll('link[rel=stylesheet]'));
+    }
 
     // FF bug: Won’t autofocus fields that are inserted via JS.
     // This behavior is incorrect. So if theres no current focus, autofocus
@@ -131,11 +146,14 @@ Pjax.prototype = {
     }
 
     // execute scripts when DOM have been completely updated
-    this.options.selectors.forEach(function(selector) {
+    this.options.selectors.forEach( function(selector) {
       forEachEls(document.querySelectorAll(selector), function(el) {
-        executeScripts(el)
-      })
-    })
+
+        collectForScriptcomplete.push.apply(collectForScriptcomplete, executeScripts.call(this, el));
+
+      }, this);
+
+    },this);
     // }
     // catch(e) {
     //   if (this.options.debug) {
@@ -143,6 +161,32 @@ Pjax.prototype = {
     //   }
     //   this.switchFallback(tmpEl, document)
     // }
+    this.log("waiting for scriptcomplete",collectForScriptcomplete);
+
+    //Fallback! If something can't be loaded or is not loaded correctly -> just force eventing in error
+    var timeOutScriptEvent = null;
+    timeOutScriptEvent = window.setTimeout( function(){
+      trigger(document,"pjax:scriptcomplete pjax:scripttimeout", options)
+      timeOutScriptEvent = null;
+    }, this.options.scriptloadtimeout);
+
+    Promise.all(collectForScriptcomplete).then(
+      //resolved
+      function(){
+        if(timeOutScriptEvent !== null ){
+          window.clearTimeout(timeOutScriptEvent);
+          trigger(document,"pjax:scriptcomplete pjax:scriptsuccess", options)
+        }
+      },
+      function(){
+        if(timeOutScriptEvent !== null ){
+          window.clearTimeout(timeOutScriptEvent);
+          trigger(document,"pjax:scriptcomplete pjax:scripterror", options)
+        }
+      }
+    );
+
+
   },
 
   doRequest: require("./lib/request.js"),
@@ -176,7 +220,10 @@ Pjax.prototype = {
           return
         }
         else {
-          throw e
+          if (this.options.forceRedirectOnFail) {
+            this.latestChance(href);
+          }
+          throw e;
         }
       }
 
