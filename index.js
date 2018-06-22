@@ -116,9 +116,19 @@ Pjax.prototype = {
         })
       }
     }
+    jsonContent = null;
+    
+    try{
+      jsonContent = JSON.parse(html);
+    } catch(e) {}
 
     tmpEl.documentElement.innerHTML = html
     this.log("load content", tmpEl.documentElement.attributes, tmpEl.documentElement.innerHTML.length)
+
+    if(jsonContent !== null) {
+      this.log("found JSON document", jsonContent);
+      this.options.onJsonDocument();      
+    }
 
     // Clear out any focused controls before inserting new page contents.
     // we clear focus on non form elements
@@ -213,8 +223,8 @@ Pjax.prototype = {
       }
       catch (e) {
         if (!this.options.debug) {
-          if (console && console.error) {
-            console.error("Pjax switch fail: ", e)
+          if (console && this.options.logObject.error) {
+            this.options.logObject.error("Pjax switch fail: ", e)
           }
           this.latestChance(href)
           return
