@@ -83,7 +83,8 @@ Pjax.prototype = {
 //   }
 
   latestChance: function(href) {
-    window.location = href
+      window.location.href = href;
+      return false;
   },
 
   onSwitch: function() {
@@ -116,8 +117,8 @@ Pjax.prototype = {
         })
       }
     }
+
     jsonContent = null;
-    
     try{
       jsonContent = JSON.parse(html);
     } catch(e) {}
@@ -127,7 +128,7 @@ Pjax.prototype = {
 
     if(jsonContent !== null) {
       this.log("found JSON document", jsonContent);
-      this.options.onJsonDocument();      
+      this.options.onJsonDocument.call(this, jsonContent);  
     }
 
     // Clear out any focused controls before inserting new page contents.
@@ -207,12 +208,11 @@ Pjax.prototype = {
     trigger(document, "pjax:send", options);
 
     // Do the request
-    this.doRequest(href, options.requestOptions, function(html) {
+    this.doRequest(href, options.requestOptions, function(html, requestData) {
       // Fail if unable to load HTML via AJAX
-      if (html === false) {
-        trigger(document,"pjax:complete pjax:error", options)
-
-        return
+      if (html === false || requestData.status !== 200) {
+        trigger(document,"pjax:complete pjax:error", {options: options, requestData: requestData, href: href});
+        return options.pjaxErrorHandler(href, options, requestData);
       }
 
       // Clear out any focused controls before inserting new page contents.
@@ -226,12 +226,11 @@ Pjax.prototype = {
           if (console && this.options.logObject.error) {
             this.options.logObject.error("Pjax switch fail: ", e)
           }
-          this.latestChance(href)
-          return
+          return options.pjaxErrorHandler(href, options, requestData) || this.latestChance(href);
         }
         else {
           if (this.options.forceRedirectOnFail) {
-            this.latestChance(href);
+            return options.pjaxErrorHandler(href, options, requestData) || this.latestChance(href);
           }
           throw e;
         }
