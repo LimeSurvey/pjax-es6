@@ -1,6 +1,6 @@
-var forEachEls = require("../foreach-els")
+import {forEachEls} from "../utility";
 
-module.exports = function(els, events, listener, useCapture) {
+export default function(els, events, listener, useCapture) {
   events = (typeof events === "string" ? events.split(" ") : events)
 
   events.forEach(function(e) {

@@ -1,299 +1,298 @@
-var clone = require('./lib/clone.js')
-var executeScripts = require('./lib/execute-scripts.js')
-var forEachEls = require("./lib/foreach-els.js")
-var newUid = require("./lib/uniqueid.js")
+"use strict";
 
-var on = require("./lib/events/on.js")
-var trigger = require("./lib/events/trigger.js")
+import on from "./lib/events/on.js";
+import log from "./lib/proto/log.js";
+import trigger from "./lib/events/trigger.js";
+import doRequest from "./lib/request.js";
+import switchSelectors from './lib/switches-selectors.js';
+import getAttachLink from "./lib/proto/attach-link.js";
+import getAttachForm from "./lib/proto/attach-form.js";
+import getExecuteScripts from './lib/execute-scripts.js';
+import getUnattachLink from "./lib/proto/unattach-link.js";
+import getUnattachForm from "./lib/proto/unattach-form.js";
+import getUpdateStylesheets from "./lib/update-stylesheets.js";
+import getUtility from './lib/utility.js';
+import getParsers from "./lib/proto/parsers.js";
+import getDomUtils from "./lib/domutil.js";
 
+const PjaxFactory = function () {
 
-var Pjax = function(options) {
-    this.firstrun = true
+  class Pjax {
 
-    var parseOptions = require("./lib/proto/parse-options.js");
-    parseOptions.apply(this,[options])
-    this.log("Pjax options", this.options)
+    constructor(options) {
+      this.firstrun = true
+      this.oUtilities = getUtility();
+      this.oDomUtils = getDomUtils.apply(this);
+      this.oParsers = getParsers.apply(this);
+      this.log = log;
 
-    this.maxUid = this.lastUid = newUid()
+      this.doRequest = doRequest;
+      this.getElements = this.oUtilities.getElements;
+      this.parseElementUnload = this.oParsers.parseElementUnload;
+      this.parseElement = this.oParsers.parseElement;
+      this.parseDOM = this.oParsers.parseDOM;
+      this.parseDOMUnload = this.oParsers.parseDOMUnload;
+      this.refresh = this.oDomUtils.refresh;
+      this.reload = this.oDomUtils.reload;
+      this.isSupported = this.oUtilities.isSupported;
+      this.attachLink = getAttachLink.apply(this);
+      this.attachForm = getAttachForm.apply(this);
+      this.unattachLink = getUnattachLink.apply(this);
+      this.unattachForm = getUnattachForm.apply(this);
+      this.updateStylesheets = getUpdateStylesheets.apply(this);
 
-    this.parseDOM(document)
+      this.oParsers.parseOptions.apply(this, [options])
+      this.log("Pjax options", this.options)
+      this.maxUid = this.lastUid = this.oUtilities.newUid()
+      this.parseDOM(document)
 
-    on(window, "popstate", function(st) {
-      if (st.state) {
-        var opt = clone(this.options)
-        opt.url = st.state.url
-        opt.title = st.state.title
-        opt.history = false
-        opt.requestOptions = {};
-        if (st.state.uid < this.lastUid) {
-          opt.backward = true
+      on(window, "popstate", (st) => {
+        this.log("OPT -> ", state);
+        
+        if (st.state) {
+          const opt = this.oUtilities.clone(this.options);
+
+          opt.url = st.state.url;
+          opt.title = st.state.title;
+          opt.history = false;
+          opt.requestOptions = {};
+            
+            this.log("OPT -> ", opt)
+            this.log("State UID", st.state.uid);
+            this.log("lastUID", this.lastUid);
+
+          if (st.state.uid < this.lastUid) {
+            opt.backward = true
+          } else {
+            opt.forward = true
+          }
+          this.lastUid = st.state.uid
+
+          // @todo implement history cache here, based on uid
+          this.loadUrl(st.state.url, opt)
         }
-        else {
-          opt.forward = true
-        }
-        this.lastUid = st.state.uid
+      });
 
-        // @todo implement history cache here, based on uid
-        this.loadUrl(st.state.url, opt)
-      }
-    }.bind(this));
+      return this;
+    }
 
-    return this;
-  }
 
-Pjax.prototype = {
-  log: require("./lib/proto/log.js"),
+    forEachSelectors(cb, context, DOMcontext) {
+      return oDomUtils.foreachSelectors(this.options.selectors, cb, context, DOMcontext)
+    }
 
-  getElements: require("./lib/proto/get-elements.js"),
+    switchSelectors(selectors, fromEl, toEl, options) {
+      return switchSelectors(this.options.switches, this.options.switchesOptions, selectors, fromEl, toEl, options)
+    }
 
-  parseDOM: require("./lib/proto/parse-dom.js"),
 
-  parseDOMtoUnload: require("./lib/proto/parse-dom-unload.js"),
-
-  refresh: require("./lib/proto/refresh.js"),
-
-  reload: require("./lib/reload.js"),
-
-  attachLink: require("./lib/proto/attach-link.js"),
-
-  attachForm: require("./lib/proto/attach-form.js"),
-
-  unattachLink: require("./lib/proto/unattach-link.js"),
-
-  unattachForm: require("./lib/proto/unattach-form.js"),
-
-  updateStylesheets: require("./lib/update-stylesheets.js"),
-
-  forEachSelectors: function(cb, context, DOMcontext) {
-    return require("./lib/foreach-selectors.js").bind(this)(this.options.selectors, cb, context, DOMcontext)
-  },
-
-  switchSelectors: function(selectors, fromEl, toEl, options) {
-    return require("./lib/switches-selectors.js").bind(this)(this.options.switches, this.options.switchesOptions, selectors, fromEl, toEl, options)
-  },
-
-  // too much problem with the code below
-  // + it’s too dangerous
-//   switchFallback: function(fromEl, toEl) {
-//     this.switchSelectors(["head", "body"], fromEl, toEl)
-//     // execute script when DOM is like it should be
-//     Pjax.executeScripts(document.querySelector("head"))
-//     Pjax.executeScripts(document.querySelector("body"))
-//   }
-
-  latestChance: function(href) {
+    latestChance(href) {
       window.location.href = href;
       return false;
-  },
+    }
 
-  onSwitch: function() {
-    trigger(window, "resize scroll")
-  },
+    onSwitch() {
+      trigger(window, "resize scroll")
+    }
 
-  loadContent: function(html, options) {
-    var tmpEl = document.implementation.createHTMLDocument("pjax")
-    var collectForScriptcomplete = [
-      (Promise.resolve("basic resolve"))
-    ];
+    loadContent(html, options) {
+      const fnExecuteScripts = getExecuteScripts();
+      const tmpEl = document.implementation.createHTMLDocument("pjax")
+      //Collector array to store the promises in
+      const collectForScriptcomplete = [(Promise.resolve("basic resolve"))];
 
-    // parse HTML attributes to copy them
-    // since we are forced to use documentElement.innerHTML (outerHTML can't be used for <html>)
-    var htmlRegex = /<html[^>]+>/gi
-    var htmlAttribsRegex = /\s?[a-z:]+(?:\=(?:\'|\")[^\'\">]+(?:\'|\"))*/gi
-    var matches = html.match(htmlRegex)
-    if (matches && matches.length) {
-      matches = matches[0].match(htmlAttribsRegex)
-      if (matches.length) {
-        matches.shift()
-        matches.forEach(function(htmlAttrib) {
-          var attr = htmlAttrib.trim().split("=")
-          if (attr.length === 1) {
-            tmpEl.documentElement.setAttribute(attr[0], true)
-          }
-          else {
-            tmpEl.documentElement.setAttribute(attr[0], attr[1].slice(1, -1))
-          }
-        })
+      //parse HTML attributes to copy them
+      //since we are forced to use documentElement.innerHTML (outerHTML can't be used for <html>)
+      const htmlRegex = /<html[^>]+>/gi
+      const htmlAttribsRegex = /\s?[a-z:]+(?:=(?:'|")[^'">]+(?:'|"))*/gi
+
+      let matches = html.match(htmlRegex);
+      if (matches && matches.length) {
+        matches = matches[0].match(htmlAttribsRegex)
+        if (matches.length) {
+          matches.shift()
+          matches.forEach(function (htmlAttrib) {
+            var attr = htmlAttrib.trim().split("=")
+            if (attr.length === 1) {
+              tmpEl.documentElement.setAttribute(attr[0], true)
+            } else {
+              tmpEl.documentElement.setAttribute(attr[0], attr[1].slice(1, -1))
+            }
+          })
+        }
       }
-    }
 
-    jsonContent = null;
-    try{
-      jsonContent = JSON.parse(html);
-    } catch(e) {}
-
-    tmpEl.documentElement.innerHTML = html
-    this.log("load content", tmpEl.documentElement.attributes, tmpEl.documentElement.innerHTML.length)
-
-    if(jsonContent !== null) {
-      this.log("found JSON document", jsonContent);
-      this.options.onJsonDocument.call(this, jsonContent);  
-    }
-
-    // Clear out any focused controls before inserting new page contents.
-    // we clear focus on non form elements
-    if (document.activeElement && !document.activeElement.value) {
+      let jsonContent = null;
       try {
-        document.activeElement.blur()
-      } catch (e) { }
-    }
-
-    this.switchSelectors(this.options.selectors, tmpEl, document, options)
-
-    //reset stylesheets if activated
-    if(this.options.reRenderCSS === true){
-      this.updateStylesheets.call(this, tmpEl.querySelectorAll('link[rel=stylesheet]'), document.querySelectorAll('link[rel=stylesheet]'));
-    }
-
-    // FF bug: Won’t autofocus fields that are inserted via JS.
-    // This behavior is incorrect. So if theres no current focus, autofocus
-    // the last field.
-    //
-    // http://www.w3.org/html/wg/drafts/html/master/forms.html
-    var autofocusEl = Array.prototype.slice.call(document.querySelectorAll("[autofocus]")).pop()
-    if (autofocusEl && document.activeElement !== autofocusEl) {
-      autofocusEl.focus();
-    }
-
-    // execute scripts when DOM have been completely updated
-    this.options.selectors.forEach( function(selector) {
-      forEachEls(document.querySelectorAll(selector), function(el) {
-
-        collectForScriptcomplete.push.apply(collectForScriptcomplete, executeScripts.call(this, el));
-
-      }, this);
-
-    },this);
-    // }
-    // catch(e) {
-    //   if (this.options.debug) {
-    //     this.log("Pjax switch fail: ", e)
-    //   }
-    //   this.switchFallback(tmpEl, document)
-    // }
-    this.log("waiting for scriptcomplete",collectForScriptcomplete);
-
-    //Fallback! If something can't be loaded or is not loaded correctly -> just force eventing in error
-    var timeOutScriptEvent = null;
-    timeOutScriptEvent = window.setTimeout( function(){
-      trigger(document,"pjax:scriptcomplete pjax:scripttimeout", options)
-      timeOutScriptEvent = null;
-    }, this.options.scriptloadtimeout);
-
-    Promise.all(collectForScriptcomplete).then(
-      //resolved
-      function(){
-        if(timeOutScriptEvent !== null ){
-          window.clearTimeout(timeOutScriptEvent);
-          trigger(document,"pjax:scriptcomplete pjax:scriptsuccess", options)
-        }
-      },
-      function(){
-        if(timeOutScriptEvent !== null ){
-          window.clearTimeout(timeOutScriptEvent);
-          trigger(document,"pjax:scriptcomplete pjax:scripterror", options)
-        }
+        jsonContent = JSON.parse(html);
+      } catch (e) {
+        this.log.warn('No JSON found. If ypu expected it there was an error');
       }
-    );
 
+      tmpEl.documentElement.innerHTML = html
+      this.log("load content", tmpEl.documentElement.attributes, tmpEl.documentElement.innerHTML.length)
 
-  },
-
-  doRequest: require("./lib/request.js"),
-
-  loadUrl: function(href, options) {
-    this.log("load href", href, options)
-
-    trigger(document, "pjax:send", options);
-
-    // Do the request
-    this.doRequest(href, options.requestOptions, function(html, requestData) {
-      // Fail if unable to load HTML via AJAX
-      if (html === false || requestData.status !== 200) {
-        trigger(document,"pjax:complete pjax:error", {options: options, requestData: requestData, href: href});
-        return options.pjaxErrorHandler(href, options, requestData);
+      if (jsonContent !== null) {
+        this.log("found JSON document", jsonContent);
+        this.options.onJsonDocument.call(this, jsonContent);
       }
 
       // Clear out any focused controls before inserting new page contents.
-      document.activeElement.blur()
-
-      try {
-        this.loadContent(html, options)
-      }
-      catch (e) {
-        if (!this.options.debug) {
-          if (console && this.options.logObject.error) {
-            this.options.logObject.error("Pjax switch fail: ", e)
-          }
-          return options.pjaxErrorHandler(href, options, requestData) || this.latestChance(href);
-        }
-        else {
-          if (this.options.forceRedirectOnFail) {
-            return options.pjaxErrorHandler(href, options, requestData) || this.latestChance(href);
-          }
-          throw e;
+      // we clear focus on non form elements
+      if (document.activeElement && !document.activeElement.value) {
+        try {
+          document.activeElement.blur()
+        } catch (e) {
+          // Nothing to do, just ignore any issues
         }
       }
 
-      if (options.history) {
-        if (this.firstrun) {
-          this.lastUid = this.maxUid = newUid()
-          this.firstrun = false
-          window.history.replaceState({
-            url: window.location.href,
-            title: document.title,
-            uid: this.maxUid
-          },
-          document.title)
-        }
+      this.switchSelectors(this.options.selectors, tmpEl, document, options)
 
-        // Update browser history
-        this.lastUid = this.maxUid = newUid()
-        window.history.pushState({
-          url: href,
-          title: options.title,
-          uid: this.maxUid
+      //reset stylesheets if activated
+      if (this.options.reRenderCSS === true) {
+        this.updateStylesheets(tmpEl.querySelectorAll('link[rel=stylesheet]'), document.querySelectorAll('link[rel=stylesheet]'));
+      }
+
+      // FF bug: Won’t autofocus fields that are inserted via JS.
+      // This behavior is incorrect. So if theres no current focus, autofocus
+      // the last field.
+      //
+      // http://www.w3.org/html/wg/drafts/html/master/forms.html
+      const autofocusEl = Array.prototype.slice.call(document.querySelectorAll("[autofocus]")).pop()
+      if (autofocusEl && document.activeElement !== autofocusEl) {
+        autofocusEl.focus();
+      }
+
+      // execute scripts when DOM have been completely updated
+      this.options.selectors.forEach((selector) => {
+        this.oUtilities.forEachEls(document.querySelectorAll(selector), function (el) {
+          collectForScriptcomplete.push.apply(collectForScriptcomplete, fnExecuteScripts(el));
+        }, this);
+      });
+      // }
+      // catch(e) {
+      //   if (this.options.debug) {
+      //     this.log("Pjax switch fail: ", e)
+      //   }
+      //   this.switchFallback(tmpEl, document)
+      // }
+      this.log("waiting for scriptcomplete", collectForScriptcomplete);
+
+      //Fallback! If something can't be loaded or is not loaded correctly -> just force eventing in error
+      let timeOutScriptEvent = null;
+      timeOutScriptEvent = window.setTimeout(function () {
+        trigger(document, "pjax:scriptcomplete pjax:scripttimeout", options)
+        timeOutScriptEvent = null;
+      }, this.options.scriptloadtimeout);
+
+      Promise.all(collectForScriptcomplete).then(
+        //resolved
+        function () {
+          if (timeOutScriptEvent !== null) {
+            window.clearTimeout(timeOutScriptEvent);
+            trigger(document, "pjax:scriptcomplete pjax:scriptsuccess", options)
+          }
         },
-          options.title,
-          href)
-      }
-
-      this.forEachSelectors(function(el) {
-        this.parseDOM(el)
-      }, this)
-
-      // Fire Events
-      trigger(document,"pjax:complete pjax:success", options)
-
-      options.analytics()
-
-      // Scroll page to top on new page load
-      if (options.scrollTo !== false) {
-        if (options.scrollTo.length > 1) {
-          window.scrollTo(options.scrollTo[0], options.scrollTo[1])
+        function () {
+          if (timeOutScriptEvent !== null) {
+            window.clearTimeout(timeOutScriptEvent);
+            trigger(document, "pjax:scriptcomplete pjax:scripterror", options)
+          }
         }
-        else {
-          window.scrollTo(0, options.scrollTo)
-        }
-      }
-    }.bind(this))
-  }
-}
-
-Pjax.isSupported = require("./lib/is-supported.js");
-
-//arguably could do `if( require("./lib/is-supported.js")()) {` but that might be a little to simple
-if (Pjax.isSupported()) {
-  module.exports = Pjax
-}
-// if there isn’t required browser functions, returning stupid api
-else {
-  var stupidPjax = function() {}
-  for (var key in Pjax.prototype) {
-    if (Pjax.prototype.hasOwnProperty(key) && typeof Pjax.prototype[key] === "function") {
-      stupidPjax[key] = stupidPjax
+      );
     }
+
+    loadUrl(href, options) {
+      this.log("load href", href, options)
+
+      trigger(document, "pjax:send", options);
+
+      // Do the request
+      this.doRequest(href, options.requestOptions, (html, requestData) => {
+        // Fail if unable to load HTML via AJAX
+        if (html === false || requestData.status !== 200) {
+          trigger(document, "pjax:complete pjax:error", {
+            options: options,
+            requestData: requestData,
+            href: href
+          });
+          return options.pjaxErrorHandler(href, options, requestData);
+        }
+
+        // Clear out any focused controls before inserting new page contents.
+        document.activeElement.blur()
+
+        try {
+          this.loadContent(html, options)
+        } catch (e) {
+          if (!this.options.debug) {
+            if (console && this.options.logObject.error) {
+              this.options.logObject.error("Pjax switch fail: ", e)
+            }
+            return options.pjaxErrorHandler(href, options, requestData) || this.latestChance(href);
+          } else {
+            if (this.options.forceRedirectOnFail) {
+              return options.pjaxErrorHandler(href, options, requestData) || this.latestChance(href);
+            }
+            throw e;
+          }
+        }
+
+        if (options.history) {
+          if (this.firstrun) {
+            this.lastUid = this.maxUid = oUtilities.newUid()
+            this.firstrun = false
+            window.history.replaceState({
+                url: window.location.href,
+                title: document.title,
+                uid: this.maxUid
+              },
+              document.title)
+          }
+
+          // Update browser history
+          this.lastUid = this.maxUid = oUtilities.newUid()
+          window.history.pushState({
+              url: href,
+              title: options.title,
+              uid: this.maxUid
+            },
+            options.title,
+            href)
+        }
+
+        this.forEachSelectors(el => this.parseDOM(el));
+
+        // Fire Events
+        trigger(document, "pjax:complete pjax:success", options)
+
+        options.analytics()
+
+        // Scroll page to top on new page load
+        if (options.scrollTo !== false) {
+          if (options.scrollTo.length > 1) {
+            window.scrollTo(options.scrollTo[0], options.scrollTo[1])
+          } else {
+            window.scrollTo(0, options.scrollTo)
+          }
+        }
+      })
+    }
+  };
+  
+  // if there isn’t required browser functions, returning stupid api
+  if (!getUtility().isSupported()) {
+    const stupidPjax = function () {}
+    for (let key in Pjax.prototype) {
+      if (key in Pjax.prototype && typeof Pjax.prototype[key] === "function") {
+        stupidPjax[key] = stupidPjax
+      }
+    }
+    return stupidPjax;
   }
 
-  module.exports = stupidPjax
+  return Pjax;
 }
+
+export default new PjaxFactory();

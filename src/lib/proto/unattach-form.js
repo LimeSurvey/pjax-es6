@@ -1,15 +1,17 @@
-require("../polyfills/Function.prototype.bind")
+import "../polyfills/Function.prototype.bind";
 
-var off = require("../events/off")
-var clone = require("../clone")
+import off from "../events/off";
+import {
+  clone
+} from "../utility";
 
-var attrClick = "data-pjax-click-state"
+const attrClick = "data-pjax-click-state"
 
-var formAction = function(el, event){
+const formAction = function (el, event) {
 
   this.options.requestOptions = {
-    requestUrl : el.getAttribute('action') || window.location.href,
-    requestMethod : el.getAttribute('method') || 'GET',
+    requestUrl: el.getAttribute('action') || window.location.href,
+    requestMethod: el.getAttribute('method') || 'GET',
   }
 
   //create a testable virtual link of the form action
@@ -35,23 +37,26 @@ var formAction = function(el, event){
   }
 
   // if declared as a full reload, just normally submit the form
-  if ( this.options.currentUrlFullReload) {
+  if (this.options.currentUrlFullReload) {
     el.setAttribute(attrClick, "reload");
     return;
   }
 
   event.preventDefault()
-  var nameList = [];
-  var paramObject = [];
-  for(var elementKey in el.elements) {
-    var element = el.elements[elementKey];
-    if (!!element.name && element.attributes !== undefined && element.tagName.toLowerCase() !== 'button'){
+  const nameList = [];
+  const paramObject = [];
+  for (let elementKey in el.elements) {
+    const element = el.elements[elementKey];
+    if (!!element.name && element.attributes !== undefined && element.tagName.toLowerCase() !== 'button') {
       if (
         (element.type !== 'checkbox' && element.type !== 'radio') || element.checked
       ) {
-        if(nameList.indexOf(element.name) === -1){
+        if (nameList.indexOf(element.name) === -1) {
           nameList.push(element.name);
-          paramObject.push({ name: encodeURIComponent(element.name), value: encodeURIComponent(element.value)});
+          paramObject.push({
+            name: encodeURIComponent(element.name),
+            value: encodeURIComponent(element.value)
+          });
         }
       }
     }
@@ -60,7 +65,7 @@ var formAction = function(el, event){
 
 
   //Creating a getString
-  var paramsString = (paramObject.map(function(value){return value.name+"="+value.value;})).join('&');
+  const paramsString = (paramObject.map(value => value.name + "=" + value.value)).join('&');
 
   this.options.requestOptions.requestPayload = paramObject;
   this.options.requestOptions.requestPayloadString = paramsString;
@@ -71,30 +76,30 @@ var formAction = function(el, event){
 
 };
 
-var isDefaultPrevented = function(event) {
+const isDefaultPrevented = function (event) {
   return event.defaultPrevented || event.returnValue === false;
 };
 
 
-module.exports = function(el) {
-  var that = this
+export default function () {
+  return (el) => {
 
-  off(el, "submit", function(event) {
-    if (isDefaultPrevented(event)) {
-      return
-    }
+    off(el, "submit", function (event) {
+      if (isDefaultPrevented(event)) {
+        return
+      }
 
-    formAction.call(that, el, event)
-  })
+      formAction.call(this, el, event)
+    })
 
-  off(el, "keyup", function(event) {
-    if (isDefaultPrevented(event)) {
-      return
-    }
+    off(el, "keyup", (event) => {
+      if (isDefaultPrevented(event)) {
+        return
+      }
 
-
-    if (event.keyCode == 13) {
-      formAction.call(that, el, event)
-    }
-  }.bind(this))
+      if (event.keyCode == 13) {
+        formAction.call(this, el, event)
+      }
+    })
+  }
 }

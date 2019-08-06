@@ -1,9 +1,9 @@
-var forEachEls = require("./foreach-els")
+import {forEachEls} from './utility';
 
-var defaultSwitches = require("./switches")
+import defaultSwitches from "./switches";
 
-module.exports = function(switches, switchesOptions, selectors, fromEl, toEl, options) {
-  selectors.forEach(function(selector) {
+export default function(switches, switchesOptions, selectors, fromEl, toEl, options) {
+  selectors.forEach((selector)  => {
     var newEls = fromEl.querySelectorAll(selector)
     var oldEls = toEl.querySelectorAll(selector)
     if (this.log) {

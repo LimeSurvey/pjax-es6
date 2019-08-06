@@ -1,19 +1,21 @@
-require("../polyfills/Function.prototype.bind")
+import "../polyfills/Function.prototype.bind";
 
-var on = require("../events/on")
-var clone = require("../clone")
+import on from "../events/on";
+import {
+  clone
+} from "../utility";
 
-var attrClick = "data-pjax-submit-state"
+const attrClick = "data-pjax-submit-state"
 
-var formAction = function(el, event){
+const formAction = function (el, event) {
 
   this.options.requestOptions = {
-    requestUrl : el.getAttribute('action') || window.location.href,
-    requestMethod : el.getAttribute('method') || 'GET',
+    requestUrl: el.getAttribute('action') || window.location.href,
+    requestMethod: el.getAttribute('method') || 'GET',
   }
 
   //create a testable virtual link of the form action
-  var virtLinkElement = document.createElement('a');
+  const virtLinkElement = document.createElement('a');
   virtLinkElement.setAttribute('href', this.options.requestOptions.requestUrl);
 
   // Ignore external links.
@@ -35,42 +37,41 @@ var formAction = function(el, event){
   }
 
   // if declared as a full reload, just normally submit the form
-  if ( this.options.currentUrlFullReload) {
+  if (this.options.currentUrlFullReload) {
     el.setAttribute(attrClick, "reload");
     return;
   }
 
   event.preventDefault()
-  var nameList = [];
-  var paramObject = [];
-  for(var elementKey in el.elements) {
-    var element = el.elements[elementKey];
-    if (!!element.name && element.attributes !== undefined && element.tagName.toLowerCase() !== 'button'){
-      
-      if (
-        (element.type !== 'checkbox' && element.type !== 'radio') || element.checked
-      ) {
-        if(nameList.indexOf(element.name) === -1){
+  const nameList = [];
+  const paramObject = [];
+
+  for (let elementKey in el.elements) {
+    const element = el.elements[elementKey];
+    if (!!element.name && element.attributes !== undefined && element.tagName.toLowerCase() !== 'button') {
+      if ((element.type !== 'checkbox' && element.type !== 'radio') || element.checked) {
+        if (nameList.indexOf(element.name) === -1) {
           nameList.push(element.name);
-          
+
           if (String(element.nodeName).toLowerCase() === 'select' && element.multiple == true) {
-            var selected = Array.from(element.options).map(function(item,i) { return (item.selected ? item.value : null) });
-            paramObject.push({ name: encodeURIComponent(element.name), value: selected});
+            const selected = Array.from(element.options).map(item => (item.selected ? item.value : null));
+            paramObject.push({
+              name: encodeURIComponent(element.name),
+              value: selected
+            });
             return;
-          } 
-
-          paramObject.push({ name: encodeURIComponent(element.name), value: encodeURIComponent(element.value)});
-          
+          }
+          paramObject.push({
+            name: encodeURIComponent(element.name),
+            value: encodeURIComponent(element.value)
+          });
         }
-
       }
     }
   }
 
-
-
   //Creating a getString
-  var paramsString = (paramObject.map(function(value){return value.name+"="+value.value;})).join('&');
+  const paramsString = (paramObject.map(value => value.name + "=" + value.value)).join('&');
 
   this.options.requestOptions.requestPayload = paramObject;
   this.options.requestOptions.requestPayloadString = paramsString;
@@ -81,19 +82,19 @@ var formAction = function(el, event){
 
 };
 
-var isDefaultPrevented = function(event) {
+const isDefaultPrevented = function (event) {
   return event.defaultPrevented || event.returnValue === false;
 };
 
 
-module.exports = function(el) {
-  var that = this
+export default function () {
+  return (el) => {
+    on(el, "submit", (event) => {
+      if (isDefaultPrevented(event)) {
+        return
+      }
 
-  on(el, "submit", function(event) {
-    if (isDefaultPrevented(event)) {
-      return
-    }
-
-    formAction.call(that, el, event)
-  })
+      formAction.call(this, el, event)
+    });
+  }
 }

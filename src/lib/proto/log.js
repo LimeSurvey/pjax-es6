@@ -1,4 +1,4 @@
-module.exports = function() {
+export default function() {
   if ((this.options.debug && this.options.logObject)) {
     if (typeof this.options.logObject.log === "function") {
       this.options.logObject.log.apply(this.options.logObject, ['PJAX ->',arguments]);

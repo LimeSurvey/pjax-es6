@@ -1,12 +1,15 @@
-require("../polyfills/Function.prototype.bind")
+import "../polyfills/Function.prototype.bind";
 
-var on = require("../events/on")
-var clone = require("../clone")
+import on from "../events/on";
+import {
+  clone
+} from "../utility";
 
-var attrClick = "data-pjax-click-state"
-var attrKey = "data-pjax-keyup-state"
 
-var linkAction = function(el, event) {
+const attrClick = "data-pjax-click-state"
+const attrKey = "data-pjax-keyup-state"
+
+const linkAction = function (el, event) {
   // Don’t break browser special behavior on links (like page in new window)
   if (event.which > 1 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
     el.setAttribute(attrClick, "modifier")
@@ -56,34 +59,35 @@ var linkAction = function(el, event) {
   this.loadUrl(el.href, clone(this.options))
 }
 
-var isDefaultPrevented = function(event) {
+const isDefaultPrevented = function (event) {
   return event.defaultPrevented || event.returnValue === false;
 }
 
-module.exports = function(el) {
-  var that = this
+export default function () {
+  return (el) => {
 
-  on(el, "click", function(event) {
-    if (isDefaultPrevented(event)) {
-      return
-    }
+    on(el, "click", (event) => {
+      if (isDefaultPrevented(event)) {
+        return
+      }
 
-    linkAction.call(that, el, event)
-  })
+      linkAction.call(this, el, event)
+    });
 
-  on(el, "keyup", function(event) {
-    if (isDefaultPrevented(event)) {
-      return
-    }
+    on(el, "keyup", (event) => {
+      if (isDefaultPrevented(event)) {
+        return
+      }
 
-    // Don’t break browser special behavior on links (like page in new window)
-    if (event.which > 1 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-      el.setAttribute(attrKey, "modifier")
-      return
-    }
+      // Don’t break browser special behavior on links (like page in new window)
+      if (event.which > 1 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        el.setAttribute(attrKey, "modifier")
+        return
+      }
 
-    if (event.keyCode == 13) {
-      linkAction.call(that, el, event)
-    }
-  }.bind(this))
+      if (event.keyCode == 13) {
+        linkAction.call(this, el, event)
+      }
+    });
+  }
 }

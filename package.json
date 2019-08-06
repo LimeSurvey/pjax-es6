@@ -21,42 +21,41 @@
     "pjax.js"
   ],
   "devDependencies": {
-    "jscs": "^3.0.7",
-    "jshint": "^2.10.2",
+    "@babel/core": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
+    "babel-eslint": "^10.0.2",
+    "eslint": "^6.1.0",
     "promise-polyfill": "^6.0.2",
     "rollup": "^1.19.3",
+    "rollup-plugin-babel": "^4.3.3",
     "rollup-plugin-commonjs": "^10.0.2",
-    "rollup-plugin-node-resolve": "^5.2.0"
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-terser": "^5.1.1"
   },
   "scripts": {
-    "lint": "jscs **/*.js && jshint . --exclude-path .gitignore",
+    "lint": "eslint src/**",
     "build": "npm run standalone && npm run build-debug",
     "standalone": "rollup -c rollup.prod.js",
     "build-debug": "rollup -c rollup.debug.js",
     "prepublish": "npm run standalone"
   },
-  "testling": {
-    "files": "tests/**/*.js",
-    "browsers": [
-      "ie/10..latest",
-      "firefox/4.0",
-      "firefox/latest",
-      "firefox/nightly",
-      "chrome/10",
-      "chrome/latest",
-      "chrome/canary",
-      "opera/12..latest",
-      "opera/next",
-      "safari/5.1..latest",
-      "ipad/6.0..latest",
-      "iphone/6.0..latest",
-      "android-browser/4.2..latest"
-    ]
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true,
+      "browser": true,
+      "es6": true
+    },
+    "extends": [
+      "eslint:recommended"
+    ],
+    "rules": {
+    },
+    "parserOptions": {
+        "ecmaVersion": 6,
+        "sourceType": "module",
+        "parser": "babel-eslint"
+    }
   },
-  "dependencies": {
-    "@babel/core": "^7.5.5",
-    "@babel/preset-env": "^7.5.5",
-    "rollup-plugin-babel": "^4.3.3",
-    "rollup-plugin-terser": "^5.1.1"
-  }
+  "dependencies": {}
 }

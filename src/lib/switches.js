@@ -1,9 +1,10 @@
-var on = require("./events/on.js")
+import on from "./events/on";
+import './polyfills/Array.prototype.from';
 // var off = require("./lib/events/on.js")
 // var trigger = require("./lib/events/trigger.js")
 
 
-module.exports = {
+export default {
   outerHTML: function(oldEl, newEl) {
     oldEl.outerHTML = newEl.outerHTML
     this.onSwitch()
@@ -16,16 +17,17 @@ module.exports = {
   },
 
   sideBySide: function(oldEl, newEl, options, switchOptions) {
-    var forEach = Array.prototype.forEach
-    var elsToRemove = []
-    var elsToAdd = []
-    var fragToAppend = document.createDocumentFragment()
+    let elsToRemove = []
+    let elsToAdd = []
+    const fragToAppend = document.createDocumentFragment()
+
     // height transition are shitty on safari
     // so commented for now (until I found something ?)
     // var relevantHeight = 0
-    var animationEventNames = "animationend webkitAnimationEnd MSAnimationEnd oanimationend"
-    var animatedElsNumber = 0
-    var sexyAnimationEnd = function(e) {
+    const animationEventNames = "animationend webkitAnimationEnd MSAnimationEnd oanimationend"
+    let animatedElsNumber = 0
+
+    const sexyAnimationEnd = function(e) {
           if (e.target != e.currentTarget) {
             // end triggered by an animation on a child
             return
@@ -68,7 +70,7 @@ module.exports = {
 
     switchOptions = switchOptions || {}
 
-    forEach.call(oldEl.childNodes, function(el) {
+    Array.from(oldEl.childNodes).forEach((el) => {
       elsToRemove.push(el)
       if (el.classList && !el.classList.contains("js-Pjax-remove")) {
         // for fast switch, clean element that just have been added, & not cleaned yet.
@@ -86,9 +88,9 @@ module.exports = {
         animatedElsNumber++
         on(el, animationEventNames, sexyAnimationEnd, true)
       }
-    })
+    });
 
-    forEach.call(newEl.childNodes, function(el) {
+    Array.from(newEl.childNodes).forEach((el) => {
       if (el.classList) {
         var addClasses = ""
         if (switchOptions.classNames) {

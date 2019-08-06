@@ -1,8 +1,8 @@
-module.exports = function(location, options, callback) {
+export default function(location, options, callback) {
   options = options || {};
-  var requestMethod = options.requestMethod || "GET";
-  var requestPayload = options.requestPayloadString || null;
-  var request = new XMLHttpRequest()
+  const requestMethod = options.requestMethod || "GET";
+  const requestPayload = options.requestPayloadString || null;
+  const request = new XMLHttpRequest()
 
   request.onreadystatechange = function() {
     if (request.readyState === 4) {
