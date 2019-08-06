@@ -14,7 +14,7 @@
   "repository": "https://github.com/LimeSurvey/pjax",
   "author": "Maxime Thirouin",
   "license": "MIT",
-  "main": "src/pjax.js",
+  "main": "dist/pjax.js",
   "files": [
     "index.js",
     "lib",
