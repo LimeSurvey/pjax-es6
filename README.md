@@ -1,5 +1,8 @@
 # Pjax
 
+This is a fork of the original Pjax built by Maxime Thirouin.
+
+It has been altered to be es6 compatible and I changed the build system to rollup.
 
 > Easily enable fast Ajax navigation on any website (using pushState +  xhr)
 
@@ -22,8 +25,8 @@ Some changes are not compatible, and may break older pages using pjax.
 
 ## Demo
 
-Pjax is in heavy use in the adminpanel of the developement branch of Limesurvey currently.
-A demo of this developement branch is currently running at https://devdemo.limsurvey.org
+Pjax is in heavy use in the adminpanel of Limesurvey currently.
+A demo of this is available at https://demo.limsurvey.org/admin
 
 ## How Pjax works
 

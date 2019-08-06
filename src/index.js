@@ -4,7 +4,6 @@ var forEachEls = require("./lib/foreach-els.js")
 var newUid = require("./lib/uniqueid.js")
 
 var on = require("./lib/events/on.js")
-// var off = require("./lib/events/on.js")
 var trigger = require("./lib/events/trigger.js")
 
 
