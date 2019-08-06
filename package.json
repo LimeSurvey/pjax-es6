@@ -35,16 +35,14 @@
   "scripts": {
     "lint": "jscs **/*.js && jshint . --exclude-path .gitignore",
     "build": "npm run standalone && npm run build-debug",
-    "standalone": "browserify index.js --standalone Pjax > pjax.min.js",
-    "build-debug": "browserify index.js --debug --standalone Pjax > pjax.js",
+    "standalone": "browserify index.js --standalone Pjax > dist/pjax.min.js",
+    "build-debug": "browserify index.js --debug --standalone Pjax > dist/pjax.js",
     "tests": "testling",
     "test": "npm run lint && npm run standalone && npm run tests",
     "test--html": "testling --html > tests/scripts/index.html",
     "coverage": "browserify -t coverify tests/**/*.js | testling | coverify",
     "example": "opn http://localhost:3000/example/; serve .",
-    "prepublish": "npm run standalone",
-    "#release": "testling does not work in a process launch by npm... :facepalm:",
-    "release": "echo \"npmpub --skip-test --dry && npm test && npmpub --skip-test --skip-cleanup\""
+    "prepublish": "npm run standalone"
   },
   "testling": {
     "files": "tests/**/*.js",
