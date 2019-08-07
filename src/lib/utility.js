@@ -12,7 +12,7 @@ import './polyfills/Array.prototype.from';
 export const forEachEls = 
 function (els, fn, ctx) {
   if (els instanceof HTMLCollection || els instanceof NodeList || els instanceof Array) {
-    return Array.prototype.from(els).forEach((el) => fn.call(ctx, el));
+    return Array.prototype.from(els).forEach((el, i) => fn.call(ctx, el, i));
   }
   // assume simple dom element
   return fn.call(ctx, els);

@@ -19,12 +19,12 @@ export default function () {
 
       forEachEls(newEls, function (newEl, i) {
         let oldEl = oldEls[i];
+        if(oldEl == undefined) { return; }
         this.log.log("newEl", newEl, "oldEl", oldEl);
-
         if (switches[selector]) {
           switches[selector].call(this, oldEl, newEl, options, switchesOptions[selector]);
         } else {
-          defaultSwitches.outerHTML(oldEl, newEl, options);
+          defaultSwitches.outerHTML.call(this, oldEl, newEl, options);
         }
       }, this);
     });

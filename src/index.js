@@ -102,7 +102,7 @@ const PjaxFactory = function () {
 
     loadContent(html, options) {
       const fnExecuteScripts = getExecuteScripts.apply(this);
-      const tmpEl = document.implementation.createHTMLDocument("pjax");
+      const tmpEl = window.document.implementation.createHTMLDocument("pjax");
       //Collector array to store the promises in
       const collectForScriptcomplete = [(Promise.resolve("basic resolve"))];
 
@@ -144,9 +144,9 @@ const PjaxFactory = function () {
 
       // Clear out any focused controls before inserting new page contents.
       // we clear focus on non form elements
-      if (document.activeElement && !document.activeElement.value) {
+      if (window.document.activeElement && !window.document.activeElement.value) {
         try {
-          document.activeElement.blur();
+          window.document.activeElement.blur();
         } catch (e) {
           // Nothing to do, just ignore any issues
         }
