@@ -26,7 +26,7 @@ const PjaxFactory = function () {
       this.oDomUtils = getDomUtils.call(this);
       this.oParsers = getParsers.call(this);
       
-      this.oParsers.parseOptions.call(this, [options]);
+      this.oParsers.parseOptions.call(this, options);
       this.log = log.call(this);
 
       this.doRequest = doRequest;
@@ -46,12 +46,12 @@ const PjaxFactory = function () {
 
   
 
-      this.log("Pjax options", this.options);
+      this.log.log("Pjax options", this.options);
       this.maxUid = this.lastUid = this.oUtilities.newUid();
       this.parseDOM(document);
 
       on(window, "popstate", (st) => {
-        this.log("OPT -> ", st);
+        this.log.log("OPT -> ", st);
 
         if (st.state) {
           const opt = this.oUtilities.clone(this.options);
@@ -61,9 +61,9 @@ const PjaxFactory = function () {
           opt.history = false;
           opt.requestOptions = {};
             
-            this.log("OPT -> ", opt);
-            this.log("State UID", st.state.uid);
-            this.log("lastUID", this.lastUid);
+            this.log.log("OPT -> ", opt);
+            this.log.log("State UID", st.state.uid);
+            this.log.log("lastUID", this.lastUid);
 
           if (st.state.uid < this.lastUid) {
             opt.backward = true;
@@ -101,7 +101,7 @@ const PjaxFactory = function () {
     }
 
     loadContent(html, options) {
-      const fnExecuteScripts = getExecuteScripts();
+      const fnExecuteScripts = getExecuteScripts.apply(this);
       const tmpEl = document.implementation.createHTMLDocument("pjax");
       //Collector array to store the promises in
       const collectForScriptcomplete = [(Promise.resolve("basic resolve"))];
@@ -131,14 +131,14 @@ const PjaxFactory = function () {
       try {
         jsonContent = JSON.parse(html);
       } catch (e) {
-        this.log.warn('No JSON found. If ypu expected it there was an error');
+        this.log.warn('No JSON found. If you expected it there was an error');
       }
 
       tmpEl.documentElement.innerHTML = html;
-      this.log("load content", tmpEl.documentElement.attributes, tmpEl.documentElement.innerHTML.length);
+      this.log.log("load content", tmpEl.documentElement.attributes, tmpEl.documentElement.innerHTML.length);
 
       if (jsonContent !== null) {
-        this.log("found JSON document", jsonContent);
+        this.log.log("found JSON document", jsonContent);
         this.options.onJsonDocument.call(this, jsonContent);
       }
 
@@ -178,11 +178,11 @@ const PjaxFactory = function () {
       // }
       // catch(e) {
       //   if (this.options.debug) {
-      //     this.log("Pjax switch fail: ", e)
+      //     this.log.log("Pjax switch fail: ", e)
       //   }
       //   this.switchFallback(tmpEl, document)
       // }
-      this.log("waiting for scriptcomplete", collectForScriptcomplete);
+      this.log.log("waiting for scriptcomplete", collectForScriptcomplete);
 
       //Fallback! If something can't be loaded or is not loaded correctly -> just force eventing in error
       let timeOutScriptEvent = null;
@@ -209,7 +209,7 @@ const PjaxFactory = function () {
     }
 
     loadUrl(href, options) {
-      this.log("load href", href, options);
+      this.log.log("load href", href, options);
 
       trigger(document, "pjax:send", options);
 

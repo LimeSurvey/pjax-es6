@@ -290,7 +290,7 @@
           return;
         }
 
-        this.log(args);
+        this.log.log(args);
 
         if (arguments.callee != undefined) {
           this.trace.apply(console, arguments.callee);
@@ -327,7 +327,7 @@
         }
 
         var diff = new Date() - this.timeHolder;
-        this.log("Took ".concat(Math.floor(diff / (1000 * 60 * 60)), " hours, ").concat(Math.floor(diff / (1000 * 60)), " minutes and ").concat(Math.floor(diff / 1000), " seconds ( ").concat(diff, " ms)"));
+        this.log.log("Took ".concat(Math.floor(diff / (1000 * 60 * 60)), " hours, ").concat(Math.floor(diff / (1000 * 60)), " minutes and ").concat(Math.floor(diff / 1000), " seconds ( ").concat(diff, " ms)"));
         this.time = new Date();
       }
     }, {
@@ -340,8 +340,8 @@
           return;
         }
 
-        this.log('--- ERROR ---');
-        this.log(args);
+        this.log.log('--- ERROR ---');
+        this.log.log(args);
       }
     }, {
       key: "warn",
@@ -353,8 +353,8 @@
           return;
         }
 
-        this.log('--- WARN ---');
-        this.log(args);
+        this.log.log('--- WARN ---');
+        this.log.log(args);
       }
     }]);
 
@@ -362,35 +362,9 @@
   }();
 
   function log () {
-    var _this = this,
-        _arguments = arguments;
-
-    if (!this.options.debug) {
-      this.options.logObject = new ConsoleShim('PJAX ->', true);
-    }
-
-    if (!this.options.logObject) {
-      this.options.logObject = new ConsoleShim('PJAX ->');
-    }
-
-    var Logger = function Logger() {
-      if (typeof this.options.logObject.log === "function") {
-        this.options.logObject.log.apply(this.options.logObject, ['PJAX ->'].concat(Array.prototype.slice.call(arguments)));
-      } // ie is weird
-      else if (this.options.logObject.log) {
-          this.options.logObject.log(['PJAX ->'].concat(Array.prototype.slice.call(arguments)));
-        }
-    };
-
-    Logger.warn = function () {
-      return _this.options.logObject.warn(['PJAX ->'].concat(_toConsumableArray(_arguments)));
-    };
-
-    Logger.error = function () {
-      return _this.options.logObject.error(['PJAX ->'].concat(_toConsumableArray(_arguments)));
-    };
-
-    return Logger;
+    console.log("PJAX options", this.options);
+    this.options.logObject = new ConsoleShim('PJAX ->', !this.options.debug);
+    return this.options.logObject;
   }
 
   function trigger (els, events, opts) {
@@ -578,9 +552,7 @@
         var newEls = fromEl.querySelectorAll(selector);
         var oldEls = toEl.querySelectorAll(selector);
 
-        if (_this.log) {
-          _this.log("Pjax switch", selector, newEls, oldEls);
-        }
+        _this.log.log("Pjax switch", selector, newEls, oldEls);
 
         if (newEls.length !== oldEls.length) {
           var throwError = options.onDomDiffers(toEl, fromEl);
@@ -592,18 +564,15 @@
 
         forEachEls(newEls, function (newEl, i) {
           var oldEl = oldEls[i];
-
-          if (this.log) {
-            this.log("newEl", newEl, "oldEl", oldEl);
-          }
+          this.log.log("newEl", newEl, "oldEl", oldEl);
 
           if (switches[selector]) {
-            switches[selector].bind(this)(oldEl, newEl, options, switchesOptions[selector]);
+            switches[selector].call(this, oldEl, newEl, options, switchesOptions[selector]);
           } else {
-            defaultSwitches.outerHTML.bind(this)(oldEl, newEl, options);
+            defaultSwitches.outerHTML(oldEl, newEl, options);
           }
         }, _this);
-      }, _this);
+      });
     };
   }
 
@@ -716,9 +685,9 @@
   var formAction = function formAction(el, event) {
     this.options.requestOptions = {
       requestUrl: el.getAttribute('action') || window.location.href,
-      requestMethod: el.getAttribute('method') || 'GET' //create a testable virtual link of the form action
+      requestMethod: el.getAttribute('method') || 'GET'
+    }; //create a testable virtual link of the form action
 
-    };
     var virtLinkElement = document.createElement('a');
     virtLinkElement.setAttribute('href', this.options.requestOptions.requestUrl); // Ignore external links.
 
@@ -1050,7 +1019,7 @@
   function evalScript (el) {
     var querySelector = this.options.mainScriptElement;
     var code = el.text || el.textContent || el.innerHTML || "";
-    this.log("Evaluating Script: ", el);
+    this.log.log("Evaluating Script: ", el);
 
     if (code.match("document.write")) {
       if (console && this.options.logObject.log) {
@@ -1085,7 +1054,7 @@
         resolve('text-node');
       }
     });
-    this.log('ParentElement => ', parent); // execute
+    this.log.log('ParentElement => ', parent); // execute
 
     parent.appendChild(script);
     parent.removeChild(script); // avoid pollution only in head or body tags
@@ -1098,11 +1067,11 @@
 
   // Needed since innerHTML does not run scripts
 
-  var executeScripts = function executeScripts() {
+  function getExecuteScripts () {
     var _this = this;
 
     return function (el) {
-      _this.log("Executing scripts for ", el);
+      _this.log.log("Executing scripts for ", el);
 
       var loadingScripts = [];
       if (el === undefined) return Promise.resolve();
@@ -1113,15 +1082,14 @@
 
       forEachEls(el.querySelectorAll("script"), function (script) {
         if (!script.type || script.type.toLowerCase() === "text/javascript") {
-          // if (script.parentNode) {
-          //   script.parentNode.removeChild(script)
-          // }
-          loadingScripts.push(evalScript.call(_this, script));
+          if (!(script.parentNode && script.parentNode.tagName == 'textarea')) {
+            loadingScripts.push(evalScript.call(_this, script));
+          }
         }
       }, _this);
       return loadingScripts;
     };
-  };
+  }
 
   function off (els, events, listener, useCapture) {
     events = typeof events === "string" ? events.split(" ") : events;
@@ -1219,9 +1187,9 @@
   var formAction$1 = function formAction(el, event) {
     this.options.requestOptions = {
       requestUrl: el.getAttribute('action') || window.location.href,
-      requestMethod: el.getAttribute('method') || 'GET' //create a testable virtual link of the form action
+      requestMethod: el.getAttribute('method') || 'GET'
+    }; //create a testable virtual link of the form action
 
-    };
     var virtLinkElement = document.createElement('a');
     virtLinkElement.setAttribute('href', this.options.requestOptions.requestUrl); // Ignore external links.
 
@@ -1309,9 +1277,9 @@
     var _this = this;
 
     return function (elements, oldElements) {
-      _this.log("styleheets old elements", oldElements);
+      _this.log.log("styleheets old elements", oldElements);
 
-      _this.log("styleheets new elements", elements);
+      _this.log.log("styleheets new elements", elements);
 
       forEachEls(elements, function (newEl) {
         var resemblingOld = Array.from(oldElements).reduce(function (acc, oldEl) {
@@ -1321,11 +1289,11 @@
 
         if (resemblingOld !== null) {
           if (_this.log) {
-            _this.log("old stylesheet found not resetting");
+            _this.log.log("old stylesheet found not resetting");
           }
         } else {
           if (_this.log) {
-            _this.log("new stylesheet => add to head");
+            _this.log.log("new stylesheet => add to head");
           }
 
           var head = document.getElementsByTagName('head')[0];
@@ -1510,7 +1478,7 @@
         this.oUtilities = getUtility();
         this.oDomUtils = getDomUtils.call(this);
         this.oParsers = getParsers.call(this);
-        this.oParsers.parseOptions.call(this, [options]);
+        this.oParsers.parseOptions.call(this, options);
         this.log = log.call(this);
         this.doRequest = doRequest;
         this.getElements = this.oUtilities.getElements;
@@ -1526,11 +1494,11 @@
         this.unattachLink = getUnattachLink.call(this);
         this.unattachForm = getUnattachForm.call(this);
         this.updateStylesheets = getUpdateStylesheets.call(this);
-        this.log("Pjax options", this.options);
+        this.log.log("Pjax options", this.options);
         this.maxUid = this.lastUid = this.oUtilities.newUid();
         this.parseDOM(document);
         on(window, "popstate", function (st) {
-          _this.log("OPT -> ", state);
+          _this.log.log("OPT -> ", st);
 
           if (st.state) {
             var opt = _this.oUtilities.clone(_this.options);
@@ -1540,11 +1508,11 @@
             opt.history = false;
             opt.requestOptions = {};
 
-            _this.log("OPT -> ", opt);
+            _this.log.log("OPT -> ", opt);
 
-            _this.log("State UID", st.state.uid);
+            _this.log.log("State UID", st.state.uid);
 
-            _this.log("lastUID", _this.lastUid);
+            _this.log.log("lastUID", _this.lastUid);
 
             if (st.state.uid < _this.lastUid) {
               opt.backward = true;
@@ -1563,7 +1531,7 @@
       _createClass(Pjax, [{
         key: "forEachSelectors",
         value: function forEachSelectors(cb, context, DOMcontext) {
-          return oDomUtils.foreachSelectors(this.options.selectors, cb, context, DOMcontext);
+          return this.oDomUtils.foreachSelectors(this.options.selectors, cb, context, DOMcontext);
         }
       }, {
         key: "switchSelectors",
@@ -1587,7 +1555,7 @@
         value: function loadContent(html, options) {
           var _this2 = this;
 
-          var fnExecuteScripts = executeScripts();
+          var fnExecuteScripts = getExecuteScripts.apply(this);
           var tmpEl = document.implementation.createHTMLDocument("pjax"); //Collector array to store the promises in
 
           var collectForScriptcomplete = [Promise.resolve("basic resolve")]; //parse HTML attributes to copy them
@@ -1619,14 +1587,14 @@
           try {
             jsonContent = JSON.parse(html);
           } catch (e) {
-            this.log.warn('No JSON found. If ypu expected it there was an error');
+            this.log.warn('No JSON found. If you expected it there was an error');
           }
 
           tmpEl.documentElement.innerHTML = html;
-          this.log("load content", tmpEl.documentElement.attributes, tmpEl.documentElement.innerHTML.length);
+          this.log.log("load content", tmpEl.documentElement.attributes, tmpEl.documentElement.innerHTML.length);
 
           if (jsonContent !== null) {
-            this.log("found JSON document", jsonContent);
+            this.log.log("found JSON document", jsonContent);
             this.options.onJsonDocument.call(this, jsonContent);
           } // Clear out any focused controls before inserting new page contents.
           // we clear focus on non form elements
@@ -1664,12 +1632,12 @@
           }); // }
           // catch(e) {
           //   if (this.options.debug) {
-          //     this.log("Pjax switch fail: ", e)
+          //     this.log.log("Pjax switch fail: ", e)
           //   }
           //   this.switchFallback(tmpEl, document)
           // }
 
-          this.log("waiting for scriptcomplete", collectForScriptcomplete); //Fallback! If something can't be loaded or is not loaded correctly -> just force eventing in error
+          this.log.log("waiting for scriptcomplete", collectForScriptcomplete); //Fallback! If something can't be loaded or is not loaded correctly -> just force eventing in error
 
           var timeOutScriptEvent = null;
           timeOutScriptEvent = window.setTimeout(function () {
@@ -1694,7 +1662,7 @@
         value: function loadUrl(href, options) {
           var _this3 = this;
 
-          this.log("load href", href, options);
+          this.log.log("load href", href, options);
           trigger(document, "pjax:send", options); // Do the request
 
           this.doRequest(href, options.requestOptions, function (html, requestData) {
@@ -1731,7 +1699,7 @@
 
             if (options.history) {
               if (_this3.firstrun) {
-                _this3.lastUid = _this3.maxUid = oUtilities.newUid();
+                _this3.lastUid = _this3.maxUid = _this3.oUtilities.newUid();
                 _this3.firstrun = false;
                 window.history.replaceState({
                   url: window.location.href,
@@ -1741,7 +1709,7 @@
               } // Update browser history
 
 
-              _this3.lastUid = _this3.maxUid = oUtilities.newUid();
+              _this3.lastUid = _this3.maxUid = _this3.oUtilities.newUid();
               window.history.pushState({
                 url: href,
                 title: options.title,
@@ -1769,7 +1737,8 @@
       }]);
 
       return Pjax;
-    }();
+    }(); // if there isn’t required browser functions, returning stupid api
+
 
     if (!isSupported()) {
       console.warn('Pjax not supported');

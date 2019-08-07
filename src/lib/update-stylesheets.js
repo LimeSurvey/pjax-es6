@@ -4,8 +4,8 @@ import {
 } from './utility';
 export default function () {
   return (elements, oldElements) => {
-    this.log("styleheets old elements", oldElements);
-    this.log("styleheets new elements", elements);
+    this.log.log("styleheets old elements", oldElements);
+    this.log.log("styleheets new elements", elements);
 
     forEachEls(elements, (newEl) => {
 
@@ -16,11 +16,11 @@ export default function () {
 
       if (resemblingOld !== null) {
         if (this.log) {
-          this.log("old stylesheet found not resetting");
+          this.log.log("old stylesheet found not resetting");
         }
       } else {
         if (this.log) {
-          this.log("new stylesheet => add to head");
+          this.log.log("new stylesheet => add to head");
         }
         const head = document.getElementsByTagName('head')[0];
         const link = document.createElement('link');

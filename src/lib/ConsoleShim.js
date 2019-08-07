@@ -33,6 +33,7 @@ class ConsoleShim {
             return err;
         }
     }
+
     _insertParamToArguments(rawArgs){
         if(this.param !== ''){
             let args = [...rawArgs];
@@ -41,6 +42,7 @@ class ConsoleShim {
         }
         return Array.from(arguments);
     }
+
     setSilent(newValue = null){
         this.silencer = newValue || !this.silencer;
     }
@@ -96,7 +98,7 @@ class ConsoleShim {
             return;
         }
 
-        this.log(args);
+        this.log.log(args);
         if (arguments.callee != undefined) {
             this.trace.apply(console, arguments.callee);
         }
@@ -121,7 +123,7 @@ class ConsoleShim {
             return;
         }
         const diff = (new Date()) - this.timeHolder;
-        this.log(`Took ${Math.floor(diff/(1000*60*60))} hours, ${Math.floor(diff/(1000*60))} minutes and ${Math.floor(diff/(1000))} seconds ( ${diff} ms)`);
+        this.log.log(`Took ${Math.floor(diff/(1000*60*60))} hours, ${Math.floor(diff/(1000*60))} minutes and ${Math.floor(diff/(1000))} seconds ( ${diff} ms)`);
         this.time = new Date();
     }
 
@@ -132,8 +134,8 @@ class ConsoleShim {
             return;
         }
 
-        this.log('--- ERROR ---');
-        this.log(args);
+        this.log.log('--- ERROR ---');
+        this.log.log(args);
     }
 
 
@@ -144,8 +146,8 @@ class ConsoleShim {
             return;
         }
 
-        this.log('--- WARN ---');
-        this.log(args);
+        this.log.log('--- WARN ---');
+        this.log.log(args);
     }
 }
 

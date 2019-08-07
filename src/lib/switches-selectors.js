@@ -9,9 +9,7 @@ export default function () {
     selectors.forEach((selector) => {
       const newEls = fromEl.querySelectorAll(selector);
       const oldEls = toEl.querySelectorAll(selector);
-      if (this.log) {
-        this.log("Pjax switch", selector, newEls, oldEls);
-      }
+      this.log.log("Pjax switch", selector, newEls, oldEls);
       if (newEls.length !== oldEls.length) {
         const throwError = options.onDomDiffers(toEl, fromEl);
         if (throwError) {
@@ -21,11 +19,10 @@ export default function () {
 
       forEachEls(newEls, function (newEl, i) {
         let oldEl = oldEls[i];
-        if (this.log) {
-          this.log("newEl", newEl, "oldEl", oldEl);
-        }
+        this.log.log("newEl", newEl, "oldEl", oldEl);
+
         if (switches[selector]) {
-          switches[selector](oldEl, newEl, options, switchesOptions[selector]);
+          switches[selector].call(this, oldEl, newEl, options, switchesOptions[selector]);
         } else {
           defaultSwitches.outerHTML(oldEl, newEl, options);
         }

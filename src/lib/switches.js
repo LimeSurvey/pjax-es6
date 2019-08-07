@@ -5,18 +5,18 @@ import './polyfills/Array.prototype.from';
 
 
 export default {
-  outerHTML: (oldEl, newEl) => {
+  outerHTML: function(oldEl, newEl) {
     oldEl.outerHTML = newEl.outerHTML;
     this.onSwitch();
   },
 
-  innerHTML: (oldEl, newEl) => {
+  innerHTML: function(oldEl, newEl) {
     oldEl.innerHTML = newEl.innerHTML;
     oldEl.className = newEl.className;
     this.onSwitch();
   },
 
-  sideBySide: (oldEl, newEl, options, switchOptions) => {
+  sideBySide: function(oldEl, newEl, options, switchOptions) {
     let elsToRemove = [];
     let elsToAdd = [];
     const fragToAppend = document.createDocumentFragment();

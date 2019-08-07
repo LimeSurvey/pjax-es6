@@ -5,7 +5,7 @@ export default function (el) {
   const querySelector = this.options.mainScriptElement;
   const code = (el.text || el.textContent || el.innerHTML || "");
 
-  this.log("Evaluating Script: ", el);
+  this.log.log("Evaluating Script: ", el);
   if (code.match("document.write")) {
     if (console && this.options.logObject.log) {
       this.options.logObject.log("Script contains document.write. Can’t be executed correctly. Code skipped ", el);
@@ -38,7 +38,7 @@ export default function (el) {
     }
   });
 
-  this.log('ParentElement => ', parent);
+  this.log.log('ParentElement => ', parent);
 
   // execute
   parent.appendChild(script);
