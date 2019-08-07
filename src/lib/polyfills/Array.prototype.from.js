@@ -3,5 +3,5 @@ if(!Array.prototype.from){
         var arr = [];
         for(var i = enumerable.length; i--; arr.unshift(enumerable[i]));
         return arr;
-    }
+    };
 }

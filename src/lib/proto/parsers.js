@@ -21,19 +21,19 @@ export default function () {
         case "a":
           // only attach link if el does not already have link attached
           if (!el.hasAttribute('data-pjax-click-state')) {
-            this.unattachLink(el)
+            this.unattachLink(el);
           }
-          break
+          break;
 
         case "form":
           // only attach link if el does not already have link attached
           if (!el.hasAttribute('data-pjax-click-state')) {
-            this.unattachForm(el)
+            this.unattachForm(el);
           }
-          break
+          break;
 
         default:
-          throw "Pjax can only be applied on <a> or <form> submit"
+          throw "Pjax can only be applied on <a> or <form> submit";
       }
     },
 
@@ -42,27 +42,27 @@ export default function () {
         case "a":
           // only attach link if el does not already have link attached
           if (!el.hasAttribute('data-pjax-click-state')) {
-            this.attachLink(el)
+            this.attachLink(el);
           }
-          break
+          break;
 
         case "form":
           // only attach link if el does not already have link attached
           if (!el.hasAttribute('data-pjax-click-state')) {
-            this.attachForm(el)
+            this.attachForm(el);
           }
-          break
+          break;
 
         default:
-          throw "Pjax can only be applied on <a> or <form> submit"
+          throw "Pjax can only be applied on <a> or <form> submit";
       }
     },
     parseDOMUnload: function (el) {
-      forEachEls(this.getElements(el), this.parseElementUnload, this)
+      forEachEls(this.getElements(el), this.parseElementUnload, this);
     },
 
     parseDOM: function (el) {
-      forEachEls(this.getElements(el), this.parseElement, this)
+      forEachEls(this.getElements(el), this.parseElement, this);
     },
 
     parseOptions: function (options) {
@@ -88,32 +88,32 @@ export default function () {
         // by default, we do track back/foward hit
         // https://productforums.google.com/forum/#!topic/analytics/WVwMDjLhXYk
         if (window._gaq) {
-          window._gaq.push(["_trackPageview"])
+          window._gaq.push(["_trackPageview"]);
         }
         if (window.ga) {
           window.ga("send", "pageview", {
             page: location.pathname,
             title: document.title
-          })
+          });
         }
       });
       this.options.scrollTo = (typeof this.options.scrollTo === 'undefined') ? 0 : this.options.scrollTo;
-      this.options.cacheBust = (typeof this.options.cacheBust === 'undefined') ? true : this.options.cacheBust
-      this.options.debug = this.options.debug || false
+      this.options.cacheBust = (typeof this.options.cacheBust === 'undefined') ? true : this.options.cacheBust;
+      this.options.debug = this.options.debug || false;
 
       // we can’t replace body.outerHTML or head.outerHTML
       // it create a bug where new body or new head are created in the dom
       // if you set head.outerHTML, a new body tag is appended, so the dom get 2 body
       // & it break the switchFallback which replace head & body
       if (!this.options.switches.head) {
-        this.options.switches.head = this.switchElementsAlt
+        this.options.switches.head = this.switchElementsAlt;
       }
       if (!this.options.switches.body) {
-        this.options.switches.body = this.switchElementsAlt
+        this.options.switches.body = this.switchElementsAlt;
       }
       if (typeof options.analytics !== "function") {
-        options.analytics = function () {}
+        options.analytics = function () {};
       }
     }
   };
-};
+}

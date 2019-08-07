@@ -50,6 +50,7 @@
       "eslint:recommended"
     ],
     "rules": {
+        "semi": ["error", "always"]
     },
     "parserOptions": {
         "ecmaVersion": 6,

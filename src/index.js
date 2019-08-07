@@ -4,7 +4,7 @@ import on from "./lib/events/on.js";
 import log from "./lib/proto/log.js";
 import trigger from "./lib/events/trigger.js";
 import doRequest from "./lib/request.js";
-import switchSelectors from './lib/switches-selectors.js';
+import getSwitchSelectors from './lib/switches-selectors.js';
 import getAttachLink from "./lib/proto/attach-link.js";
 import getAttachForm from "./lib/proto/attach-form.js";
 import getExecuteScripts from './lib/execute-scripts.js';
@@ -12,6 +12,7 @@ import getUnattachLink from "./lib/proto/unattach-link.js";
 import getUnattachForm from "./lib/proto/unattach-form.js";
 import getUpdateStylesheets from "./lib/update-stylesheets.js";
 import getUtility from './lib/utility.js';
+import {isSupported} from './lib/utility.js';
 import getParsers from "./lib/proto/parsers.js";
 import getDomUtils from "./lib/domutil.js";
 
@@ -20,11 +21,13 @@ const PjaxFactory = function () {
   class Pjax {
 
     constructor(options) {
-      this.firstrun = true
+      this.firstrun = true;
       this.oUtilities = getUtility();
-      this.oDomUtils = getDomUtils.apply(this);
-      this.oParsers = getParsers.apply(this);
-      this.log = log;
+      this.oDomUtils = getDomUtils.call(this);
+      this.oParsers = getParsers.call(this);
+      
+      this.oParsers.parseOptions.call(this, [options]);
+      this.log = log.call(this);
 
       this.doRequest = doRequest;
       this.getElements = this.oUtilities.getElements;
@@ -35,20 +38,21 @@ const PjaxFactory = function () {
       this.refresh = this.oDomUtils.refresh;
       this.reload = this.oDomUtils.reload;
       this.isSupported = this.oUtilities.isSupported;
-      this.attachLink = getAttachLink.apply(this);
-      this.attachForm = getAttachForm.apply(this);
-      this.unattachLink = getUnattachLink.apply(this);
-      this.unattachForm = getUnattachForm.apply(this);
-      this.updateStylesheets = getUpdateStylesheets.apply(this);
+      this.attachLink = getAttachLink.call(this);
+      this.attachForm = getAttachForm.call(this);
+      this.unattachLink = getUnattachLink.call(this);
+      this.unattachForm = getUnattachForm.call(this);
+      this.updateStylesheets = getUpdateStylesheets.call(this);
 
-      this.oParsers.parseOptions.apply(this, [options])
-      this.log("Pjax options", this.options)
-      this.maxUid = this.lastUid = this.oUtilities.newUid()
-      this.parseDOM(document)
+  
+
+      this.log("Pjax options", this.options);
+      this.maxUid = this.lastUid = this.oUtilities.newUid();
+      this.parseDOM(document);
 
       on(window, "popstate", (st) => {
-        this.log("OPT -> ", state);
-        
+        this.log("OPT -> ", st);
+
         if (st.state) {
           const opt = this.oUtilities.clone(this.options);
 
@@ -57,19 +61,19 @@ const PjaxFactory = function () {
           opt.history = false;
           opt.requestOptions = {};
             
-            this.log("OPT -> ", opt)
+            this.log("OPT -> ", opt);
             this.log("State UID", st.state.uid);
             this.log("lastUID", this.lastUid);
 
           if (st.state.uid < this.lastUid) {
-            opt.backward = true
+            opt.backward = true;
           } else {
-            opt.forward = true
+            opt.forward = true;
           }
-          this.lastUid = st.state.uid
+          this.lastUid = st.state.uid;
 
           // @todo implement history cache here, based on uid
-          this.loadUrl(st.state.url, opt)
+          this.loadUrl(st.state.url, opt);
         }
       });
 
@@ -78,11 +82,12 @@ const PjaxFactory = function () {
 
 
     forEachSelectors(cb, context, DOMcontext) {
-      return oDomUtils.foreachSelectors(this.options.selectors, cb, context, DOMcontext)
+      return this.oDomUtils.foreachSelectors(this.options.selectors, cb, context, DOMcontext);
     }
 
     switchSelectors(selectors, fromEl, toEl, options) {
-      return switchSelectors(this.options.switches, this.options.switchesOptions, selectors, fromEl, toEl, options)
+      const fnSwitchSelectors = getSwitchSelectors.call(this);
+      return fnSwitchSelectors(this.options.switches, this.options.switchesOptions, selectors, fromEl, toEl, options);
     }
 
 
@@ -92,33 +97,33 @@ const PjaxFactory = function () {
     }
 
     onSwitch() {
-      trigger(window, "resize scroll")
+      trigger(window, "resize scroll");
     }
 
     loadContent(html, options) {
       const fnExecuteScripts = getExecuteScripts();
-      const tmpEl = document.implementation.createHTMLDocument("pjax")
+      const tmpEl = document.implementation.createHTMLDocument("pjax");
       //Collector array to store the promises in
       const collectForScriptcomplete = [(Promise.resolve("basic resolve"))];
 
       //parse HTML attributes to copy them
       //since we are forced to use documentElement.innerHTML (outerHTML can't be used for <html>)
-      const htmlRegex = /<html[^>]+>/gi
-      const htmlAttribsRegex = /\s?[a-z:]+(?:=(?:'|")[^'">]+(?:'|"))*/gi
+      const htmlRegex = /<html[^>]+>/gi;
+      const htmlAttribsRegex = /\s?[a-z:]+(?:=(?:'|")[^'">]+(?:'|"))*/gi;
 
       let matches = html.match(htmlRegex);
       if (matches && matches.length) {
-        matches = matches[0].match(htmlAttribsRegex)
+        matches = matches[0].match(htmlAttribsRegex);
         if (matches.length) {
-          matches.shift()
+          matches.shift();
           matches.forEach(function (htmlAttrib) {
-            var attr = htmlAttrib.trim().split("=")
+            var attr = htmlAttrib.trim().split("=");
             if (attr.length === 1) {
-              tmpEl.documentElement.setAttribute(attr[0], true)
+              tmpEl.documentElement.setAttribute(attr[0], true);
             } else {
-              tmpEl.documentElement.setAttribute(attr[0], attr[1].slice(1, -1))
+              tmpEl.documentElement.setAttribute(attr[0], attr[1].slice(1, -1));
             }
-          })
+          });
         }
       }
 
@@ -129,8 +134,8 @@ const PjaxFactory = function () {
         this.log.warn('No JSON found. If ypu expected it there was an error');
       }
 
-      tmpEl.documentElement.innerHTML = html
-      this.log("load content", tmpEl.documentElement.attributes, tmpEl.documentElement.innerHTML.length)
+      tmpEl.documentElement.innerHTML = html;
+      this.log("load content", tmpEl.documentElement.attributes, tmpEl.documentElement.innerHTML.length);
 
       if (jsonContent !== null) {
         this.log("found JSON document", jsonContent);
@@ -141,13 +146,13 @@ const PjaxFactory = function () {
       // we clear focus on non form elements
       if (document.activeElement && !document.activeElement.value) {
         try {
-          document.activeElement.blur()
+          document.activeElement.blur();
         } catch (e) {
           // Nothing to do, just ignore any issues
         }
       }
 
-      this.switchSelectors(this.options.selectors, tmpEl, document, options)
+      this.switchSelectors(this.options.selectors, tmpEl, document, options);
 
       //reset stylesheets if activated
       if (this.options.reRenderCSS === true) {
@@ -159,7 +164,7 @@ const PjaxFactory = function () {
       // the last field.
       //
       // http://www.w3.org/html/wg/drafts/html/master/forms.html
-      const autofocusEl = Array.prototype.slice.call(document.querySelectorAll("[autofocus]")).pop()
+      const autofocusEl = Array.prototype.slice.call(document.querySelectorAll("[autofocus]")).pop();
       if (autofocusEl && document.activeElement !== autofocusEl) {
         autofocusEl.focus();
       }
@@ -182,7 +187,7 @@ const PjaxFactory = function () {
       //Fallback! If something can't be loaded or is not loaded correctly -> just force eventing in error
       let timeOutScriptEvent = null;
       timeOutScriptEvent = window.setTimeout(function () {
-        trigger(document, "pjax:scriptcomplete pjax:scripttimeout", options)
+        trigger(document, "pjax:scriptcomplete pjax:scripttimeout", options);
         timeOutScriptEvent = null;
       }, this.options.scriptloadtimeout);
 
@@ -191,20 +196,20 @@ const PjaxFactory = function () {
         function () {
           if (timeOutScriptEvent !== null) {
             window.clearTimeout(timeOutScriptEvent);
-            trigger(document, "pjax:scriptcomplete pjax:scriptsuccess", options)
+            trigger(document, "pjax:scriptcomplete pjax:scriptsuccess", options);
           }
         },
         function () {
           if (timeOutScriptEvent !== null) {
             window.clearTimeout(timeOutScriptEvent);
-            trigger(document, "pjax:scriptcomplete pjax:scripterror", options)
+            trigger(document, "pjax:scriptcomplete pjax:scripterror", options);
           }
         }
       );
     }
 
     loadUrl(href, options) {
-      this.log("load href", href, options)
+      this.log("load href", href, options);
 
       trigger(document, "pjax:send", options);
 
@@ -221,14 +226,14 @@ const PjaxFactory = function () {
         }
 
         // Clear out any focused controls before inserting new page contents.
-        document.activeElement.blur()
+        document.activeElement.blur();
 
         try {
-          this.loadContent(html, options)
+          this.loadContent(html, options);
         } catch (e) {
           if (!this.options.debug) {
             if (console && this.options.logObject.error) {
-              this.options.logObject.error("Pjax switch fail: ", e)
+              this.options.logObject.error("Pjax switch fail: ", e);
             }
             return options.pjaxErrorHandler(href, options, requestData) || this.latestChance(href);
           } else {
@@ -241,58 +246,59 @@ const PjaxFactory = function () {
 
         if (options.history) {
           if (this.firstrun) {
-            this.lastUid = this.maxUid = oUtilities.newUid()
-            this.firstrun = false
+            this.lastUid = this.maxUid = this.oUtilities.newUid();
+            this.firstrun = false;
             window.history.replaceState({
                 url: window.location.href,
                 title: document.title,
                 uid: this.maxUid
               },
-              document.title)
+              document.title);
           }
 
           // Update browser history
-          this.lastUid = this.maxUid = oUtilities.newUid()
+          this.lastUid = this.maxUid = this.oUtilities.newUid();
           window.history.pushState({
               url: href,
               title: options.title,
               uid: this.maxUid
             },
             options.title,
-            href)
+            href);
         }
 
         this.forEachSelectors(el => this.parseDOM(el));
 
         // Fire Events
-        trigger(document, "pjax:complete pjax:success", options)
+        trigger(document, "pjax:complete pjax:success", options);
 
-        options.analytics()
+        options.analytics();
 
         // Scroll page to top on new page load
         if (options.scrollTo !== false) {
           if (options.scrollTo.length > 1) {
-            window.scrollTo(options.scrollTo[0], options.scrollTo[1])
+            window.scrollTo(options.scrollTo[0], options.scrollTo[1]);
           } else {
-            window.scrollTo(0, options.scrollTo)
+            window.scrollTo(0, options.scrollTo);
           }
         }
-      })
+      });
     }
-  };
+  }
   
   // if there isn’t required browser functions, returning stupid api
-  if (!getUtility().isSupported()) {
-    const stupidPjax = function () {}
+  if (!isSupported()) {
+      console.warn('Pjax not supported');
+    const stupidPjax = function () {};
     for (let key in Pjax.prototype) {
       if (key in Pjax.prototype && typeof Pjax.prototype[key] === "function") {
-        stupidPjax[key] = stupidPjax
+        stupidPjax[key] = stupidPjax;
       }
     }
     return stupidPjax;
   }
 
   return Pjax;
-}
+};
 
 export default new PjaxFactory();

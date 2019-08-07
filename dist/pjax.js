@@ -40,6 +40,26 @@
     return Constructor;
   }
 
+  function _toConsumableArray(arr) {
+    return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread();
+  }
+
+  function _arrayWithoutHoles(arr) {
+    if (Array.isArray(arr)) {
+      for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
+
+      return arr2;
+    }
+  }
+
+  function _iterableToArray(iter) {
+    if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
+  }
+
+  function _nonIterableSpread() {
+    throw new TypeError("Invalid attempt to spread non-iterable instance");
+  }
+
   if (!Array.prototype.from) {
     Array.prototype.from = function (enumerable) {
       var arr = [];
@@ -111,15 +131,266 @@
     });
   }
 
+  /* eslint no-console: "off" */
+  var ConsoleShim =
+  /*#__PURE__*/
+  function () {
+    function ConsoleShim() {
+      var param = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+      var silencer = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+      _classCallCheck(this, ConsoleShim);
+
+      this.param = param;
+      this.silencer = silencer;
+      this.collector = [];
+      this.currentGroupDescription = '';
+      this.activeGroups = 0;
+      this.timeHolder = null;
+      this.methods = ['group', 'groupEnd', 'log', 'trace', 'time', 'timeEnd', 'error', 'warn'];
+      this.silent = {
+        group: function group() {
+          return;
+        },
+        groupEnd: function groupEnd() {
+          return;
+        },
+        log: function log() {
+          return;
+        },
+        trace: function trace() {
+          return;
+        },
+        time: function time() {
+          return;
+        },
+        timeEnd: function timeEnd() {
+          return;
+        },
+        error: function error() {
+          return;
+        },
+        err: function err() {
+          return;
+        },
+        debug: function debug() {
+          return;
+        },
+        warn: function warn() {
+          return;
+        }
+      };
+    }
+
+    _createClass(ConsoleShim, [{
+      key: "_generateError",
+      value: function _generateError() {
+        try {
+          throw new Error();
+        } catch (err) {
+          return err;
+        }
+      }
+    }, {
+      key: "_insertParamToArguments",
+      value: function _insertParamToArguments(rawArgs) {
+        if (this.param !== '') {
+          var args = _toConsumableArray(rawArgs);
+
+          args.unshift(this.param);
+          return args;
+        }
+
+        return Array.from(arguments);
+      }
+    }, {
+      key: "setSilent",
+      value: function setSilent() {
+        var newValue = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+        this.silencer = newValue || !this.silencer;
+      } //Start grouping logs
+
+    }, {
+      key: "group",
+      value: function group() {
+        if (this.silencer) {
+          return;
+        }
+
+        var args = this._insertParamToArguments(arguments);
+
+        if (typeof console.group === 'function') {
+          console.group.apply(console, args);
+          return;
+        }
+
+        var description = args[0] || 'GROUP';
+        this.currentGroupDescription = description;
+        this.activeGroups++;
+      } //Stop grouping logs
+
+    }, {
+      key: "groupEnd",
+      value: function groupEnd() {
+        if (this.silencer) {
+          return;
+        }
+
+        var args = this._insertParamToArguments(arguments);
+
+        if (typeof console.groupEnd === 'function') {
+          console.groupEnd.apply(console, args);
+          return;
+        }
+
+        this.currentGroupDescription = '';
+        this.activeGroups--;
+        this.activeGroups = this.activeGroups === 0 ? 0 : this.activeGroups--;
+      } //Simplest mechanism to log stuff
+      // Aware of the group shim
+
+    }, {
+      key: "log",
+      value: function log() {
+        if (this.silencer) {
+          return;
+        }
+
+        var args = this._insertParamToArguments(arguments);
+
+        if (typeof console.group === 'function') {
+          console.log.apply(console, args);
+          return;
+        }
+
+        args.shift();
+        args.unshift(' '.repeat(this.activeGroups * 2));
+        this.log.apply(this, args);
+      } //Trace back the apply.
+      //Uses either the inbuilt function console trace or opens a shim to trace by calling this._insertParamToArguments(arguments).callee
+
+    }, {
+      key: "trace",
+      value: function trace() {
+        if (this.silencer) {
+          return;
+        }
+
+        var args = this._insertParamToArguments(arguments);
+
+        if (typeof console.trace === 'function') {
+          console.trace.apply(console, args);
+          return;
+        }
+
+        var artificialError = this._generateError();
+
+        if (artificialError.stack) {
+          this.log.apply(console, artificialError.stack);
+          return;
+        }
+
+        this.log(args);
+
+        if (arguments.callee != undefined) {
+          this.trace.apply(console, arguments.callee);
+        }
+      }
+    }, {
+      key: "time",
+      value: function time() {
+        if (this.silencer) {
+          return;
+        }
+
+        var args = this._insertParamToArguments(arguments);
+
+        if (typeof console.time === 'function') {
+          console.time.apply(console, args);
+          return;
+        }
+
+        this.timeHolder = new Date();
+      }
+    }, {
+      key: "timeEnd",
+      value: function timeEnd() {
+        if (this.silencer) {
+          return;
+        }
+
+        var args = this._insertParamToArguments(arguments);
+
+        if (typeof console.timeEnd === 'function') {
+          console.timeEnd.apply(console, args);
+          return;
+        }
+
+        var diff = new Date() - this.timeHolder;
+        this.log("Took ".concat(Math.floor(diff / (1000 * 60 * 60)), " hours, ").concat(Math.floor(diff / (1000 * 60)), " minutes and ").concat(Math.floor(diff / 1000), " seconds ( ").concat(diff, " ms)"));
+        this.time = new Date();
+      }
+    }, {
+      key: "error",
+      value: function error() {
+        var args = this._insertParamToArguments(arguments);
+
+        if (typeof console.error === 'function') {
+          console.error.apply(console, args);
+          return;
+        }
+
+        this.log('--- ERROR ---');
+        this.log(args);
+      }
+    }, {
+      key: "warn",
+      value: function warn() {
+        var args = this._insertParamToArguments(arguments);
+
+        if (typeof console.warn === 'function') {
+          console.warn.apply(console, args);
+          return;
+        }
+
+        this.log('--- WARN ---');
+        this.log(args);
+      }
+    }]);
+
+    return ConsoleShim;
+  }();
+
   function log () {
-    if (this.options.debug && this.options.logObject) {
+    var _this = this,
+        _arguments = arguments;
+
+    if (!this.options.debug) {
+      this.options.logObject = new ConsoleShim('PJAX ->', true);
+    }
+
+    if (!this.options.logObject) {
+      this.options.logObject = new ConsoleShim('PJAX ->');
+    }
+
+    var Logger = function Logger() {
       if (typeof this.options.logObject.log === "function") {
-        this.options.logObject.log.apply(this.options.logObject, ['PJAX ->', arguments]);
+        this.options.logObject.log.apply(this.options.logObject, ['PJAX ->'].concat(Array.prototype.slice.call(arguments)));
       } // ie is weird
       else if (this.options.logObject.log) {
-          this.options.logObject.log(['PJAX ->', arguments]);
+          this.options.logObject.log(['PJAX ->'].concat(Array.prototype.slice.call(arguments)));
         }
-    }
+    };
+
+    Logger.warn = function () {
+      return _this.options.logObject.warn(['PJAX ->'].concat(_toConsumableArray(_arguments)));
+    };
+
+    Logger.error = function () {
+      return _this.options.logObject.error(['PJAX ->'].concat(_toConsumableArray(_arguments)));
+    };
+
+    return Logger;
   }
 
   function trigger (els, events, opts) {
@@ -299,39 +570,41 @@
     }
   };
 
-  function _switchSelectors (switches, switchesOptions, selectors, fromEl, toEl, options) {
+  function getSwitchSelectors () {
     var _this = this;
 
-    selectors.forEach(function (selector) {
-      var newEls = fromEl.querySelectorAll(selector);
-      var oldEls = toEl.querySelectorAll(selector);
+    return function (switches, switchesOptions, selectors, fromEl, toEl, options) {
+      selectors.forEach(function (selector) {
+        var newEls = fromEl.querySelectorAll(selector);
+        var oldEls = toEl.querySelectorAll(selector);
 
-      if (_this.log) {
-        _this.log("Pjax switch", selector, newEls, oldEls);
-      }
-
-      if (newEls.length !== oldEls.length) {
-        var throwError = options.onDomDiffers(toEl, fromEl);
-
-        if (throwError) {
-          throw "DOM doesn’t look the same on new loaded page: ’" + selector + "’ - new " + newEls.length + ", old " + oldEls.length;
-        }
-      }
-
-      forEachEls(newEls, function (newEl, i) {
-        var oldEl = oldEls[i];
-
-        if (this.log) {
-          this.log("newEl", newEl, "oldEl", oldEl);
+        if (_this.log) {
+          _this.log("Pjax switch", selector, newEls, oldEls);
         }
 
-        if (switches[selector]) {
-          switches[selector].bind(this)(oldEl, newEl, options, switchesOptions[selector]);
-        } else {
-          defaultSwitches.outerHTML.bind(this)(oldEl, newEl, options);
+        if (newEls.length !== oldEls.length) {
+          var throwError = options.onDomDiffers(toEl, fromEl);
+
+          if (throwError) {
+            throw "DOM doesn’t look the same on new loaded page: ’" + selector + "’ - new " + newEls.length + ", old " + oldEls.length;
+          }
         }
+
+        forEachEls(newEls, function (newEl, i) {
+          var oldEl = oldEls[i];
+
+          if (this.log) {
+            this.log("newEl", newEl, "oldEl", oldEl);
+          }
+
+          if (switches[selector]) {
+            switches[selector].bind(this)(oldEl, newEl, options, switchesOptions[selector]);
+          } else {
+            defaultSwitches.outerHTML.bind(this)(oldEl, newEl, options);
+          }
+        }, _this);
       }, _this);
-    }, this);
+    };
   }
 
   if (!Function.prototype.bind) {
@@ -1235,9 +1508,10 @@
 
         this.firstrun = true;
         this.oUtilities = getUtility();
-        this.oDomUtils = getDomUtils.apply(this);
-        this.oParsers = getParsers.apply(this);
-        this.log = log;
+        this.oDomUtils = getDomUtils.call(this);
+        this.oParsers = getParsers.call(this);
+        this.oParsers.parseOptions.call(this, [options]);
+        this.log = log.call(this);
         this.doRequest = doRequest;
         this.getElements = this.oUtilities.getElements;
         this.parseElementUnload = this.oParsers.parseElementUnload;
@@ -1247,12 +1521,11 @@
         this.refresh = this.oDomUtils.refresh;
         this.reload = this.oDomUtils.reload;
         this.isSupported = this.oUtilities.isSupported;
-        this.attachLink = getAttachLink.apply(this);
-        this.attachForm = getAttachForm.apply(this);
-        this.unattachLink = getUnattachLink.apply(this);
-        this.unattachForm = getUnattachForm.apply(this);
-        this.updateStylesheets = getUpdateStylesheets.apply(this);
-        this.oParsers.parseOptions.apply(this, [options]);
+        this.attachLink = getAttachLink.call(this);
+        this.attachForm = getAttachForm.call(this);
+        this.unattachLink = getUnattachLink.call(this);
+        this.unattachForm = getUnattachForm.call(this);
+        this.updateStylesheets = getUpdateStylesheets.call(this);
         this.log("Pjax options", this.options);
         this.maxUid = this.lastUid = this.oUtilities.newUid();
         this.parseDOM(document);
@@ -1295,7 +1568,8 @@
       }, {
         key: "switchSelectors",
         value: function switchSelectors(selectors, fromEl, toEl, options) {
-          return _switchSelectors(this.options.switches, this.options.switchesOptions, selectors, fromEl, toEl, options);
+          var fnSwitchSelectors = getSwitchSelectors.call(this);
+          return fnSwitchSelectors(this.options.switches, this.options.switchesOptions, selectors, fromEl, toEl, options);
         }
       }, {
         key: "latestChance",
@@ -1497,7 +1771,9 @@
       return Pjax;
     }();
 
-    if (!getUtility().isSupported()) {
+    if (!isSupported()) {
+      console.warn('Pjax not supported');
+
       var stupidPjax = function stupidPjax() {};
 
       for (var key in Pjax.prototype) {

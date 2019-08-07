@@ -5,14 +5,14 @@ import {
   clone
 } from "../utility";
 
-const attrClick = "data-pjax-click-state"
+const attrClick = "data-pjax-click-state";
 
 const formAction = function (el, event) {
 
   this.options.requestOptions = {
     requestUrl: el.getAttribute('action') || window.location.href,
     requestMethod: el.getAttribute('method') || 'GET',
-  }
+  };
 
   //create a testable virtual link of the form action
   var virtLinkElement = document.createElement('a');
@@ -21,19 +21,19 @@ const formAction = function (el, event) {
   // Ignore external links.
   if (virtLinkElement.protocol !== window.location.protocol || virtLinkElement.host !== window.location.host) {
     el.setAttribute(attrClick, "external");
-    return
+    return;
   }
 
   // Ignore click if we are on an anchor on the same page
   if (virtLinkElement.pathname === window.location.pathname && virtLinkElement.hash.length > 0) {
     el.setAttribute(attrClick, "anchor-present");
-    return
+    return;
   }
 
   // Ignore empty anchor "foo.html#"
   if (virtLinkElement.href === window.location.href.split("#")[0] + "#") {
-    el.setAttribute(attrClick, "anchor-empty")
-    return
+    el.setAttribute(attrClick, "anchor-empty");
+    return;
   }
 
   // if declared as a full reload, just normally submit the form
@@ -42,7 +42,7 @@ const formAction = function (el, event) {
     return;
   }
 
-  event.preventDefault()
+  event.preventDefault();
   const nameList = [];
   const paramObject = [];
   for (let elementKey in el.elements) {
@@ -72,7 +72,7 @@ const formAction = function (el, event) {
 
   el.setAttribute(attrClick, "submit");
 
-  this.loadUrl(virtLinkElement.href, clone(this.options))
+  this.loadUrl(virtLinkElement.href, clone(this.options));
 
 };
 
@@ -86,20 +86,20 @@ export default function () {
 
     off(el, "submit", function (event) {
       if (isDefaultPrevented(event)) {
-        return
+        return;
       }
 
-      formAction.call(this, el, event)
-    })
+      formAction.call(this, el, event);
+    });
 
     off(el, "keyup", (event) => {
       if (isDefaultPrevented(event)) {
-        return
+        return;
       }
 
       if (event.keyCode == 13) {
-        formAction.call(this, el, event)
+        formAction.call(this, el, event);
       }
-    })
-  }
+    });
+  };
 }

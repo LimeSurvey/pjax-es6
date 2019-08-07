@@ -8,9 +8,9 @@ export default function (el) {
   this.log("Evaluating Script: ", el);
   if (code.match("document.write")) {
     if (console && this.options.logObject.log) {
-      this.options.logObject.log("Script contains document.write. Can’t be executed correctly. Code skipped ", el)
+      this.options.logObject.log("Script contains document.write. Can’t be executed correctly. Code skipped ", el);
     }
-    return false
+    return false;
   }
 
   const src = (el.src || "");
@@ -18,7 +18,7 @@ export default function (el) {
   const script = document.createElement("script");
 
   const promise = new Promise((resolve) => {
-    script.type = "text/javascript"
+    script.type = "text/javascript";
     if (src != "") {
       script.src = src;
       script.addEventListener('load', function () {
@@ -29,10 +29,10 @@ export default function (el) {
 
     if (code != "") {
       try {
-        script.appendChild(document.createTextNode(code))
+        script.appendChild(document.createTextNode(code));
       } catch (e) {
         // old IEs have funky script nodes
-        script.text = code
+        script.text = code;
       }
       resolve('text-node');
     }
@@ -42,7 +42,7 @@ export default function (el) {
 
   // execute
   parent.appendChild(script);
-  parent.removeChild(script)
+  parent.removeChild(script);
   // avoid pollution only in head or body tags
   // of if the setting removeScriptsAfterParsing is active
   if ((["head", "body"].indexOf(parent.tagName.toLowerCase()) > 0) || (this.options.removeScriptsAfterParsing === true)) {

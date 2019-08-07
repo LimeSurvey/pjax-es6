@@ -5,61 +5,61 @@ import './polyfills/Array.prototype.from';
 
 
 export default {
-  outerHTML: function(oldEl, newEl) {
-    oldEl.outerHTML = newEl.outerHTML
-    this.onSwitch()
+  outerHTML: (oldEl, newEl) => {
+    oldEl.outerHTML = newEl.outerHTML;
+    this.onSwitch();
   },
 
-  innerHTML: function(oldEl, newEl) {
-    oldEl.innerHTML = newEl.innerHTML
-    oldEl.className = newEl.className
-    this.onSwitch()
+  innerHTML: (oldEl, newEl) => {
+    oldEl.innerHTML = newEl.innerHTML;
+    oldEl.className = newEl.className;
+    this.onSwitch();
   },
 
-  sideBySide: function(oldEl, newEl, options, switchOptions) {
-    let elsToRemove = []
-    let elsToAdd = []
-    const fragToAppend = document.createDocumentFragment()
+  sideBySide: (oldEl, newEl, options, switchOptions) => {
+    let elsToRemove = [];
+    let elsToAdd = [];
+    const fragToAppend = document.createDocumentFragment();
 
     // height transition are shitty on safari
     // so commented for now (until I found something ?)
     // var relevantHeight = 0
-    const animationEventNames = "animationend webkitAnimationEnd MSAnimationEnd oanimationend"
-    let animatedElsNumber = 0
+    const animationEventNames = "animationend webkitAnimationEnd MSAnimationEnd oanimationend";
+    let animatedElsNumber = 0;
 
     const sexyAnimationEnd = function(e) {
           if (e.target != e.currentTarget) {
             // end triggered by an animation on a child
-            return
+            return;
           }
 
-          animatedElsNumber--
+          animatedElsNumber--;
           if (animatedElsNumber <= 0 && elsToRemove) {
             elsToRemove.forEach(function(el) {
               // browsing quickly can make the el
               // already removed by last page update ?
               if (el.parentNode) {
-                el.parentNode.removeChild(el)
+                el.parentNode.removeChild(el);
               }
-            })
+            });
 
             elsToAdd.forEach(function(el) {
-              el.className = el.className.replace(el.getAttribute("data-pjax-classes"), "")
-              el.removeAttribute("data-pjax-classes")
+              el.className = el.className.replace(el.getAttribute("data-pjax-classes"), "");
+              el.removeAttribute("data-pjax-classes");
               // Pjax.off(el, animationEventNames, sexyAnimationEnd, true)
-            })
+            });
 
-            elsToAdd = null // free memory
-            elsToRemove = null // free memory
+            elsToAdd = null; // free memory
+            elsToRemove = null; // free memory
 
             // assume the height is now useless (avoid bug since there is overflow hidden on the parent)
             // oldEl.style.height = "auto"
 
             // this is to trigger some repaint (example: picturefill)
-            this.onSwitch()
+            this.onSwitch();
             // Pjax.trigger(window, "scroll")
           }
-        }.bind(this)
+        }.bind(this);
 
     // Force height to be able to trigger css animation
     // here we get the relevant height
@@ -68,50 +68,50 @@ export default {
     // oldEl.parentNode.removeChild(newEl)
     // oldEl.style.height = oldEl.getBoundingClientRect().height + "px"
 
-    switchOptions = switchOptions || {}
+    switchOptions = switchOptions || {};
 
     Array.from(oldEl.childNodes).forEach((el) => {
-      elsToRemove.push(el)
+      elsToRemove.push(el);
       if (el.classList && !el.classList.contains("js-Pjax-remove")) {
         // for fast switch, clean element that just have been added, & not cleaned yet.
         if (el.hasAttribute("data-pjax-classes")) {
-          el.className = el.className.replace(el.getAttribute("data-pjax-classes"), "")
-          el.removeAttribute("data-pjax-classes")
+          el.className = el.className.replace(el.getAttribute("data-pjax-classes"), "");
+          el.removeAttribute("data-pjax-classes");
         }
-        el.classList.add("js-Pjax-remove")
+        el.classList.add("js-Pjax-remove");
         if (switchOptions.callbacks && switchOptions.callbacks.removeElement) {
-          switchOptions.callbacks.removeElement(el)
+          switchOptions.callbacks.removeElement(el);
         }
         if (switchOptions.classNames) {
-          el.className += " " + switchOptions.classNames.remove + " " + (options.backward ? switchOptions.classNames.backward : switchOptions.classNames.forward)
+          el.className += " " + switchOptions.classNames.remove + " " + (options.backward ? switchOptions.classNames.backward : switchOptions.classNames.forward);
         }
-        animatedElsNumber++
-        on(el, animationEventNames, sexyAnimationEnd, true)
+        animatedElsNumber++;
+        on(el, animationEventNames, sexyAnimationEnd, true);
       }
     });
 
     Array.from(newEl.childNodes).forEach((el) => {
       if (el.classList) {
-        var addClasses = ""
+        var addClasses = "";
         if (switchOptions.classNames) {
-          addClasses = " js-Pjax-add " + switchOptions.classNames.add + " " + (options.backward ? switchOptions.classNames.forward : switchOptions.classNames.backward)
+          addClasses = " js-Pjax-add " + switchOptions.classNames.add + " " + (options.backward ? switchOptions.classNames.forward : switchOptions.classNames.backward);
         }
         if (switchOptions.callbacks && switchOptions.callbacks.addElement) {
-          switchOptions.callbacks.addElement(el)
+          switchOptions.callbacks.addElement(el);
         }
-        el.className += addClasses
-        el.setAttribute("data-pjax-classes", addClasses)
-        elsToAdd.push(el)
-        fragToAppend.appendChild(el)
-        animatedElsNumber++
-        on(el, animationEventNames, sexyAnimationEnd, true)
+        el.className += addClasses;
+        el.setAttribute("data-pjax-classes", addClasses);
+        elsToAdd.push(el);
+        fragToAppend.appendChild(el);
+        animatedElsNumber++;
+        on(el, animationEventNames, sexyAnimationEnd, true);
       }
-    })
+    });
 
     // pass all className of the parent
-    oldEl.className = newEl.className
-    oldEl.appendChild(fragToAppend)
+    oldEl.className = newEl.className;
+    oldEl.appendChild(fragToAppend);
 
     // oldEl.style.height = relevantHeight + "px"
   }
-}
+};

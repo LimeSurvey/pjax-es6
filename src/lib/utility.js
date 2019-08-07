@@ -19,21 +19,21 @@ function (els, fn, ctx) {
 };
 
 export const getElements = function (el) {
-  return el.querySelectorAll(this.options.elements)
-}
+  return el.querySelectorAll(this.options.elements);
+};
 
 export const clone = function (obj) {
   if (null === obj || "object" != typeof obj) {
-    return obj
+    return obj;
   }
-  const copy = obj.constructor()
+  const copy = obj.constructor();
   for (var attr in obj) {
     if (attr in obj) {
       copy[attr] = obj[attr];
     }
   }
   return copy;
-}
+};
 
 export const isSupported = function () {
   // Borrowed wholesale from https://github.com/defunkt/jquery-pjax
@@ -41,16 +41,16 @@ export const isSupported = function () {
     window.history.pushState &&
     window.history.replaceState &&
     // pushState isn’t reliable on iOS until 5.
-    !navigator.userAgent.match(/((iPod|iPhone|iPad).+\bOS\s+[1-4]\D|WebApps\/.+CFNetwork)/)
-}
+    !navigator.userAgent.match(/((iPod|iPhone|iPad).+\bOS\s+[1-4]\D|WebApps\/.+CFNetwork)/);
+};
 
 export const newUid = (function() {
-    var counter = 0
+    var counter = 0;
     return function() {
-      var id = ("pjax" + (new Date().getTime())) + "_" + counter
-      counter++
-      return id
-    }
+      var id = ("pjax" + (new Date().getTime())) + "_" + counter;
+      counter++;
+      return id;
+    };
   })();
 
 export default function() {
@@ -60,5 +60,5 @@ export default function() {
         clone,
         isSupported,
         newUid
-    }
+    };
 }

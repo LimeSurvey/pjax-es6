@@ -1,7 +1,7 @@
 import {
   forEachEls
-} from "./utility"
-import evalScript from "./eval-script"
+} from "./utility";
+import evalScript from "./eval-script";
 
 // Finds and executes scripts (used for newly added elements)
 // Needed since innerHTML does not run scripts
@@ -28,7 +28,7 @@ const executeScripts = function () {
     }, this);
 
     return loadingScripts;
-  }
-}
+  };
+};
 
 export default executeScripts;
